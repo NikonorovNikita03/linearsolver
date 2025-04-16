@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import linprog
 
 class Solver(object):
 
@@ -7,6 +8,35 @@ class Solver(object):
         self.demand_vector = np.array(d_v)
         self.cost_matrix = np.array(c_m)
         self.transport_matrix = np.zeros((self.supply_vector.size, self.demand_vector.size))
+
+    def solve_transportation_scipy(self):
+        #a, b, C = self.supply_vector, self.demand_vector, self.cost_matrix
+        a, b, _, C = self.__surplus()
+        m, n = C.shape
+        # Целевая функция (минимизация суммарной стоимости)
+        print(C)
+        c = C.flatten()
+        print(c)
+        # Ограничения: сумма по строкам = a, сумма по столбцам = b
+        A_eq = []
+        # Ограничения по запасам (каждая строка)
+        for i in range(m):
+            row = np.zeros((m, n))
+            row[i, :] = 1
+            A_eq.append(row.flatten())
+        # Ограничения по потребностям (каждый столбец)
+        for j in range(n):
+            col = np.zeros((m, n))
+            col[:, j] = 1
+            A_eq.append(col.flatten())
+        A_eq = np.array(A_eq)
+        b_eq = np.concatenate([a, b])
+        
+        # Решение задачи линейного программирования
+        res = linprog(c, A_eq=A_eq[:-1], b_eq=b_eq[:-1], bounds=(0, None))
+        X = res.x.reshape((m, n))
+        total_cost = np.sum(X * C)
+        return X, total_cost
 
     def double_preference(self):
         s_v_tmp, d_v_tmp, t_m_tmp, c_m_tmp = self.__surplus()
@@ -210,11 +240,11 @@ class Solver(object):
         elif np.sum(s_v_tmp) < np.sum(d_v_tmp):
             s_v_tmp = np.append(s_v_tmp, np.sum(d_v_tmp) - np.sum(s_v_tmp))
             new_row_t_tmp = np.zeros((1, d_v_tmp.size))
-            new_row_c_tmp = np.full((1, d_v_tmp.size), infinity)
+            #new_row_c_tmp = np.full((1, d_v_tmp.size), infinity)
             t_m_tmp = np.append(t_m_tmp, new_row_t_tmp, axis=0)
-            c_m_tmp = np.append(c_m_tmp, new_row_c_tmp, axis=0)
+            c_m_tmp = np.append(c_m_tmp, new_row_t_tmp, axis=0)
+            #c_m_tmp = np.append(c_m_tmp, new_row_c_tmp, axis=0)
             self.surplus = "demand"
-
         else:
             self.surplus = "equal"
 

@@ -1,8 +1,9 @@
+import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTableWidget, QTableWidgetItem, QGroupBox, QPushButton,
     QLabel, QSpinBox, QComboBox, QTextEdit, QMessageBox, QTabWidget, QStatusBar,
-    QHeaderView
+    QHeaderView, QGridLayout, QSizePolicy
 )
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QClipboard, QIcon
@@ -13,9 +14,9 @@ class TransportationSolver(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Решение транспортной задачи")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1366, 768)  # Увеличил размер окна
         
-        self.central_widget = QWidget()
+        self.central_widget = QWidget() 
         self.setCentralWidget(self.central_widget)
         
         self.main_layout = QVBoxLayout()
@@ -31,7 +32,7 @@ class TransportationSolver(QMainWindow):
         self.setWindowIcon(self.icon)
         
         self.create_controls()
-        self.create_input_table()
+        self.create_input_tables()
         self.create_solution_tabs()
         
         # Добавляем виджет статуса в основной layout
@@ -103,51 +104,138 @@ class TransportationSolver(QMainWindow):
         control_group.setLayout(control_layout)
         self.main_layout.addWidget(control_group)
     
-    def create_input_table(self):
-        """Create the main input table for all problem data"""
+    def create_input_tables(self):
+        """Create three tables for costs, supply and demand with specified layout"""
         input_group = QGroupBox("Исходные данные")
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(5)
         
-        # Create table
-        self.input_table = QTableWidget()
-        self.input_table.setStyleSheet("QTableWidget { font-size: 12px; }")
-        self.input_table.itemChanged.connect(self.update_balance_cell)
+        # Верхняя область (горизонтальная, 3/4 высоты)
+        top_area = QHBoxLayout()
+        top_area.setSpacing(5)
         
-        # Configure table headers and resize behavior
-        header = self.input_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)  # Равномерное растяжение колонок
+        # Таблица перевозок (4/5 ширины)
+        costs_group = QGroupBox("Стоимости перевозок")
+        costs_layout = QVBoxLayout()
+        
+        self.costs_table = QTableWidget()
+        self.costs_table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        
+        # Настройка заголовков таблицы
+        header = self.costs_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Stretch)
         header.setDefaultAlignment(Qt.AlignCenter)
+        header.setVisible(False)
         
-        v_header = self.input_table.verticalHeader()
-        v_header.setSectionResizeMode(QHeaderView.Stretch)  # Равномерное растяжение строк
+        v_header = self.costs_table.verticalHeader()
+        v_header.setSectionResizeMode(QHeaderView.Stretch)
         v_header.setDefaultAlignment(Qt.AlignCenter)
+        v_header.setVisible(False)
         
-        # Create button row
-        btn_layout = QHBoxLayout()
+        # Кнопки копирования/вставки
+        costs_btn_layout = QHBoxLayout()
+        costs_copy_btn = QPushButton("Копировать")
+        costs_copy_btn.setStyleSheet("background-color: #2196F3; color: white;")
+        costs_copy_btn.clicked.connect(lambda: self.copy_table_data(self.costs_table))
         
-        # Copy button
-        copy_btn = QPushButton("Копировать данные")
-        copy_btn.setStyleSheet("background-color: #2196F3; color: white;")
-        copy_btn.clicked.connect(lambda: self.copy_table_data(self.input_table))
+        costs_paste_btn = QPushButton("Вставить")
+        costs_paste_btn.setStyleSheet("background-color: #FF9800; color: white;")
+        costs_paste_btn.clicked.connect(lambda: self.paste_data_to_table(self.costs_table))
         
-        # Paste button
-        paste_btn = QPushButton("Вставить данные")
-        paste_btn.setStyleSheet("background-color: #FF9800; color: white;")
-        paste_btn.clicked.connect(self.paste_data_to_table)
+        costs_btn_layout.addStretch()
+        costs_btn_layout.addWidget(costs_copy_btn)
+        costs_btn_layout.addWidget(costs_paste_btn)
         
-        btn_layout.addStretch()
-        btn_layout.addWidget(copy_btn)
-        btn_layout.addWidget(paste_btn)
+        costs_layout.addWidget(self.costs_table)
+        costs_layout.addLayout(costs_btn_layout)
+        costs_group.setLayout(costs_layout)
         
-        layout.addWidget(self.input_table)
-        layout.addLayout(btn_layout)
-        input_group.setLayout(layout)
+        # Таблица поставщиков (1/5 ширины)
+        supply_group = QGroupBox("Запасы поставщиков")
+        supply_layout = QVBoxLayout()
+        
+        self.supply_table = QTableWidget(1, 1)
+        self.supply_table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        
+        # Настройка заголовков таблицы
+        s_header = self.supply_table.horizontalHeader()
+        s_header.setSectionResizeMode(QHeaderView.Stretch)
+        s_header.setDefaultAlignment(Qt.AlignCenter)
+        s_header.setVisible(False)
+        
+        s_v_header = self.supply_table.verticalHeader()
+        s_v_header.setSectionResizeMode(QHeaderView.Stretch)
+        s_v_header.setDefaultAlignment(Qt.AlignCenter)
+        s_v_header.setVisible(False)
+        
+        # Кнопки копирования/вставки
+        supply_btn_layout = QHBoxLayout()
+        supply_copy_btn = QPushButton("Копировать")
+        supply_copy_btn.setStyleSheet("background-color: #2196F3; color: white;")
+        supply_copy_btn.clicked.connect(lambda: self.copy_table_data(self.supply_table))
+        
+        supply_paste_btn = QPushButton("Вставить")
+        supply_paste_btn.setStyleSheet("background-color: #FF9800; color: white;")
+        supply_paste_btn.clicked.connect(lambda: self.paste_data_to_table(self.supply_table))
+        
+        supply_btn_layout.addStretch()
+        supply_btn_layout.addWidget(supply_copy_btn)
+        supply_btn_layout.addWidget(supply_paste_btn)
+        
+        supply_layout.addWidget(self.supply_table)
+        supply_layout.addLayout(supply_btn_layout)
+        supply_group.setLayout(supply_layout)
+        
+        # Добавляем таблицы в верхнюю область
+        top_area.addWidget(costs_group, stretch=9)  # 4/5 ширины
+        top_area.addWidget(supply_group, stretch=1)  # 1/5 ширины
+        
+        # Нижняя область (таблица потребителей во всю ширину)
+        demand_group = QGroupBox("Потребности потребителей")
+        demand_layout = QVBoxLayout()
+        
+        self.demand_table = QTableWidget(1, 1)
+        self.demand_table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        
+        # Настройка заголовков таблицы
+        d_header = self.demand_table.horizontalHeader()
+        d_header.setSectionResizeMode(QHeaderView.Stretch)
+        d_header.setDefaultAlignment(Qt.AlignCenter)
+        d_header.setVisible(False)
+        
+        d_v_header = self.demand_table.verticalHeader()
+        d_v_header.setSectionResizeMode(QHeaderView.Stretch)
+        d_v_header.setDefaultAlignment(Qt.AlignCenter)
+        d_v_header.setVisible(False)
+        
+        # Кнопки копирования/вставки
+        demand_btn_layout = QHBoxLayout()
+        demand_copy_btn = QPushButton("Копировать")
+        demand_copy_btn.setStyleSheet("background-color: #2196F3; color: white;")
+        demand_copy_btn.clicked.connect(lambda: self.copy_table_data(self.demand_table))
+        
+        demand_paste_btn = QPushButton("Вставить")
+        demand_paste_btn.setStyleSheet("background-color: #FF9800; color: white;")
+        demand_paste_btn.clicked.connect(lambda: self.paste_data_to_table(self.demand_table))
+        
+        demand_btn_layout.addStretch()
+        demand_btn_layout.addWidget(demand_copy_btn)
+        demand_btn_layout.addWidget(demand_paste_btn)
+        
+        demand_layout.addWidget(self.demand_table)
+        demand_layout.addLayout(demand_btn_layout)
+        demand_group.setLayout(demand_layout)
+        
+        # Устанавливаем соотношение высот верхней и нижней областей (3:1)
+        main_layout.addLayout(top_area, stretch=3)
+        main_layout.addWidget(demand_group, stretch=1)
+        
+        input_group.setLayout(main_layout)
         self.main_layout.addWidget(input_group)
-    
+        
     def create_solution_tabs(self):
         """Create tab widget for solution display"""
         self.tabs = QTabWidget()
-        # Явное выделение вкладок
         self.tabs.setStyleSheet("""
             QTabBar::tab {
                 padding: 8px 15px;
@@ -245,8 +333,8 @@ class TransportationSolver(QMainWindow):
         # Show temporary status message
         self.show_status_message("Данные скопированы в буфер обмена!")
     
-    def paste_data_to_table(self):
-        """Paste data from clipboard to input table"""
+    def paste_data_to_table(self, table):
+        """Paste data from clipboard to specified table"""
         clipboard = QApplication.clipboard()
         text = clipboard.text().strip()
         
@@ -263,135 +351,58 @@ class TransportationSolver(QMainWindow):
         # Split each row into columns
         data = [row.split('\t') for row in rows]
         
-        # Disconnect itemChanged signal to avoid multiple updates
-        self.input_table.itemChanged.disconnect(self.update_balance_cell)
-        
         try:
-            num_rows = len(data)
-            num_cols = len(data[0]) if num_rows > 0 else 0
-            
-            self.source_spin.setValue(num_rows - 1)
-            self.dest_spin.setValue(num_cols - 1)
-            
             # Insert as much data as possible without errors
-            for row_idx in range(min(len(data), self.input_table.rowCount())):
-                for col_idx in range(min(len(data[row_idx]), self.input_table.columnCount())):
-                    # Skip bottom-right cell (balance cell)
-                    if row_idx == self.input_table.rowCount()-1 and col_idx == self.input_table.columnCount()-1:
-                        continue
-                        
+            for row_idx in range(min(len(data), table.rowCount())):
+                for col_idx in range(min(len(data[row_idx]), table.columnCount())):
                     value = data[row_idx][col_idx]
                     item = QTableWidgetItem(value)
                     item.setTextAlignment(Qt.AlignCenter)
-                    self.input_table.setItem(row_idx, col_idx, item)
+                    table.setItem(row_idx, col_idx, item)
             
             self.show_status_message("Данные вставлены успешно!")
         except Exception as e:
             self.show_status_message(f"Ошибка при вставке данных: {str(e)}")
-        finally:
-            # Reconnect signal and update balance
-            self.input_table.itemChanged.connect(self.update_balance_cell)
-            self.update_balance_cell()
-    
-    def update_balance_cell(self):
-        """Update the balance cell (bottom-right) with supply-demand difference"""
-        # Disconnect signal to avoid recursion
-        self.input_table.itemChanged.disconnect(self.update_balance_cell)
-        
-        try:
-            sources = self.source_spin.value()
-            destinations = self.dest_spin.value()
-            
-            # Calculate total supply
-            total_supply = 0
-            for i in range(sources):
-                item = self.input_table.item(i, destinations)
-                if item and item.text().isdigit():
-                    total_supply += int(item.text())
-            
-            # Calculate total demand
-            total_demand = 0
-            for j in range(destinations):
-                item = self.input_table.item(sources, j)
-                if item and item.text().isdigit():
-                    total_demand += int(item.text())
-            
-            # Update balance cell
-            balance = total_supply - total_demand
-            balance_item = self.input_table.item(sources, destinations)
-            if not balance_item:
-                balance_item = QTableWidgetItem()
-                balance_item.setFlags(balance_item.flags() & ~Qt.ItemIsEditable)
-                balance_item.setTextAlignment(Qt.AlignCenter)
-                self.input_table.setItem(sources, destinations, balance_item)
-            
-            balance_item.setText(str(balance))
-            
-            # Color coding for balance
-            if balance > 0:
-                balance_item.setBackground(Qt.green)
-            elif balance < 0:
-                balance_item.setBackground(Qt.red)
-            else:
-                balance_item.setBackground(Qt.white)
-                
-        except Exception as e:
-            print(f"Error updating balance: {e}")
-        finally:
-            # Reconnect signal
-            self.input_table.itemChanged.connect(self.update_balance_cell)
     
     def show_status_message(self, message):
         """Display status message in the dedicated label"""
         self.status_label.setText(message)
     
     def update_table_size(self):
-        """Update the input table dimensions based on sources/destinations"""
+        """Update all tables dimensions based on sources/destinations"""
         sources = self.source_spin.value()
         destinations = self.dest_spin.value()
         
-        # Disconnect signal to avoid multiple updates
-        self.input_table.itemChanged.disconnect(self.update_balance_cell)
-        
-        # Set row and column count (sources + 1 for demand row, destinations + 1 for supply column)
-        self.input_table.setRowCount(sources + 1)
-        self.input_table.setColumnCount(destinations + 1)
-        
-        # Set headers
-        headers = [f"Потр. {j+1}" for j in range(destinations)] + ["Запасы"]
-        self.input_table.setHorizontalHeaderLabels(headers)
-        
-        row_headers = [f"Пост. {i+1}" for i in range(sources)] + ["Потребности"]
-        self.input_table.setVerticalHeaderLabels(row_headers)
-        
-        self.input_table.clearContents()
+        # Update costs table (sources x destinations)
+        self.costs_table.setRowCount(sources)
+        self.costs_table.setColumnCount(destinations)
+        self.costs_table.clearContents()
         
         for i in range(sources):
             for j in range(destinations):
                 item = QTableWidgetItem("10")
                 item.setTextAlignment(Qt.AlignCenter)
-                self.input_table.setItem(i, j, item)
-            
-            # Supply column
+                self.costs_table.setItem(i, j, item)
+        
+        # Update supply table (sources x 1)
+        self.supply_table.setRowCount(sources)
+        self.supply_table.setColumnCount(1)
+        self.supply_table.clearContents()
+        
+        for i in range(sources):
             item = QTableWidgetItem("100")
             item.setTextAlignment(Qt.AlignCenter)
-            self.input_table.setItem(i, destinations, item)
+            self.supply_table.setItem(i, 0, item)
         
-        # Demand row
+        # Update demand table (1 x destinations)
+        self.demand_table.setRowCount(1)
+        self.demand_table.setColumnCount(destinations)
+        self.demand_table.clearContents()
+        
         for j in range(destinations):
             item = QTableWidgetItem("80")
             item.setTextAlignment(Qt.AlignCenter)
-            self.input_table.setItem(sources, j, item)
-        
-        # Bottom-right cell (balance cell)
-        balance_item = QTableWidgetItem()
-        balance_item.setFlags(balance_item.flags() & ~Qt.ItemIsEditable)
-        balance_item.setTextAlignment(Qt.AlignCenter)
-        self.input_table.setItem(sources, destinations, balance_item)
-        
-        # Update balance and reconnect signal
-        self.update_balance_cell()
-        self.input_table.itemChanged.connect(self.update_balance_cell)
+            self.demand_table.setItem(0, j, item)
     
     def extract_data(self):
         sources = self.source_spin.value()
@@ -401,21 +412,24 @@ class TransportationSolver(QMainWindow):
         supply = []
         demand = []
         
+        # Get costs data
         for i in range(sources):
             row = []
             for j in range(destinations):
-                item = self.input_table.item(i, j)
+                item = self.costs_table.item(i, j)
                 value = int(item.text()) if item and item.text().isdigit() else 0
                 row.append(value)
             costs.append(row)
         
+        # Get supply data
         for i in range(sources):
-            item = self.input_table.item(i, destinations)
+            item = self.supply_table.item(i, 0)
             value = int(item.text()) if item and item.text().isdigit() else 0
             supply.append(value)
         
+        # Get demand data
         for j in range(destinations):
-            item = self.input_table.item(sources, j)
+            item = self.demand_table.item(0, j)
             value = int(item.text()) if item and item.text().isdigit() else 0
             demand.append(value)
         
@@ -458,3 +472,10 @@ class TransportationSolver(QMainWindow):
         self.solution_text.setPlainText(summary)
         self.tabs.setCurrentIndex(0)  # Switch to solution tab
         self.show_status_message("Задача решена!")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = TransportationSolver()
+    window.show()
+    sys.exit(app.exec())

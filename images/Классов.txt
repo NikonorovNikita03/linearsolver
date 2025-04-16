@@ -1,0 +1,77 @@
+classDiagram
+    direction TB
+
+    %% Основные классы
+    class TransportationSolver {
+        -central_widget: QWidget
+        -main_layout: QVBoxLayout
+        -status_label: QLabel
+        -icon: QIcon
+        -input_table: QTableWidget
+        -solution_table: QTableWidget
+        -solution_text: QTextEdit
+        -tabs: QTabWidget
+        -source_spin: QSpinBox
+        -dest_spin: QSpinBox
+        -method_combo: QComboBox
+        -solve_btn: QPushButton
+        +__init__()
+        +create_controls()
+        +create_input_table()
+        +create_solution_tabs()
+        +copy_table_data(table: QTableWidget)
+        +paste_data_to_table()
+        +update_balance_cell()
+        +show_status_message(message: str)
+        +update_table_size()
+        +extract_data() -> (list, list, list)
+        +solve_problem()
+    }
+
+    class Solver {
+        -supply_vector: np.array
+        -demand_vector: np.array
+        -cost_matrix: np.array
+        -transport_matrix: np.array
+        -surplus: str
+        +__init__(s_v: list, d_v: list, c_m: list)
+        +solve_transportation_scipy() -> (np.array, float)
+        +double_preference() -> (np.array, float, float)
+        +vogel_rule() -> (np.array, float, float)
+        +nwc_rule() -> (np.array, float, float)
+        +cm_rule() -> (np.array, float, float)
+        +row_minina() -> (np.array, float, float)
+        +column_minima() -> (np.array, float, float)
+        +russell_approximation() -> (np.array, float, float)
+        +heuristic_1() -> (np.array, float, float)
+        +heuristic_2() -> (np.array, float, float)
+        +modi_method() -> (np.array, float, float)
+        -__costs(transport_matrix: np.array) -> (float, float)
+        -__surplus() -> (np.array, np.array, np.array, np.array)
+    }
+
+    %% Взаимосвязи
+    TransportationSolver --> Solver : Использует для решения задачи
+    TransportationSolver --> QMainWindow : Наследует
+
+    %% Внешние зависимости (упрощённо)
+    class QMainWindow {
+        <<PySide6.QtWidgets>>
+    }
+    class QTableWidget {
+        <<PySide6.QtWidgets>>
+    }
+    class QTextEdit {
+        <<PySide6.QtWidgets>>
+    }
+    class numpy {
+        <<np.array>>
+    }
+    class scipy {
+        <<linprog>>
+    }
+
+    Solver --> numpy : Использует
+    Solver --> scipy : Использует
+    TransportationSolver --> QTableWidget : Содержит
+    TransportationSolver --> QTextEdit : Содержит

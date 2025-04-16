@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor User
+    participant System
+
+    activate User
+    User->>System: Ввести данные (Текст или Таблица)
+    
+    alt Ввод условий задачи текстом
+      System->>System: Распознавание условия задачи из текста
+    end
+    
+    System->>System: Проверка данных
+    
+    alt Данные корректны
+      System->>System: Решение задачи
+      System->>System: Получение результата
+      System->>System: Сохранение результата
+      System-->>User: Результат
+    else Данные некорректны
+      System-->>User: Сообщение об ошибке
+      User->>System: Ввести данные (Текст или Таблица)
+    end
+    
+    deactivate User
