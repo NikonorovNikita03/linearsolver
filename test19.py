@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QClipboard, QIcon
 from solver import Solver
+import styles
 
 
 class TransportationSolver(QMainWindow):
@@ -41,31 +42,7 @@ class TransportationSolver(QMainWindow):
         self.create_controls()
         
         self.main_tabs = QTabWidget()
-        self.main_tabs.setStyleSheet("""
-            QTabBar::tab {
-                padding: 8px 15px;
-                background: #f0f0f0;
-                border: 1px solid #ccc;
-                border-bottom: none;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-                margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: #fff;
-                border-color: #aaa;
-                border-bottom: 1px solid #fff;
-                font-weight: bold;
-            }
-            QTabBar::tab:hover {
-                background: #e0e0e0;
-            }
-            QTabWidget::pane {
-                border: 1px solid #aaa;
-                margin-top: -1px;
-                background: #fff;
-            }
-        """)
+        self.main_tabs.setStyleSheet(styles.mainTab)
         
         self.input_tab = QWidget()
         self.create_input_tables()
@@ -115,17 +92,7 @@ class TransportationSolver(QMainWindow):
         
         self.solve_btn = QPushButton("Решить")
         self.solve_btn.setFixedHeight(60)
-        self.solve_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50; 
-                color: white; 
-                padding: 8px;
-                margin-top: 18px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
+        self.solve_btn.setStyleSheet(styles.solve_btn)
         self.solve_btn.clicked.connect(self.solve_problem)
         
         control_layout.addLayout(source_layout)
@@ -326,7 +293,7 @@ class TransportationSolver(QMainWindow):
         mime_data.setText("\n".join(data))
         clipboard.setMimeData(mime_data)
         self.show_status_message("Данные скопированы в буфер обмена!")
-    
+
     def paste_data_to_table(self, table):
         clipboard = QApplication.clipboard()
         text = clipboard.text().strip()
@@ -343,12 +310,26 @@ class TransportationSolver(QMainWindow):
         data = [row.split('\t') for row in rows]
         
         try:
-            for row_idx in range(min(len(data), table.rowCount())):
-                for col_idx in range(min(len(data[row_idx]), table.columnCount())):
+            new_rows = len(data)
+            new_cols = max(len(row) for row in data) if data else 0
+            
+            table.setRowCount(new_rows)
+            table.setColumnCount(new_cols)
+            
+            for row_idx in range(new_rows):
+                for col_idx in range(min(len(data[row_idx]), new_cols)):
                     value = data[row_idx][col_idx]
                     item = QTableWidgetItem(value)
                     item.setTextAlignment(Qt.AlignCenter)
                     table.setItem(row_idx, col_idx, item)
+                        
+            if table == self.costs_table:
+                self.source_spin.setValue(new_rows)
+                self.dest_spin.setValue(new_cols)
+            elif table == self.supply_table:
+                self.source_spin.setValue(new_rows)
+            elif table == self.demand_table:
+                self.dest_spin.setValue(new_cols)
             
             self.show_status_message("Данные вставлены успешно!")
         except Exception as e:
@@ -358,12 +339,9 @@ class TransportationSolver(QMainWindow):
         self.status_label.setText(message)
     
     def update_table_size(self):
-        """Update all tables dimensions based on sources/destinations"""
         sources = self.source_spin.value()
         destinations = self.dest_spin.value()
         
-        # Сохраняем текущие данные
-        # old_costs = []
         for i in range(self.costs_table.rowCount()):
             for j in range(self.costs_table.columnCount()):
                 if len(self.costs) <= i:
@@ -371,8 +349,6 @@ class TransportationSolver(QMainWindow):
                 if len(self.costs[0]) <= j:
                     for k in range(len(self.costs)):
                         self.costs[k].append(0)
-                # print(self.costs)
-                # print(i, j)
                 self.costs[i][j] = int(self.costs_table.item(i, j).text())
         
         for i in range(self.supply_table.rowCount()):
@@ -386,10 +362,7 @@ class TransportationSolver(QMainWindow):
                 self.demand.append(0)
             item = self.demand_table.item(0, j)
             self.demand[j] = int(item.text()) if item else 0
-            # item = self.demand_table.item(0, j)
-            # old_demand.append(item.text() if item else "0")
         
-        # Обновляем размеры таблиц
         self.costs_table.setRowCount(sources)
         self.costs_table.setColumnCount(destinations)
         
@@ -399,7 +372,6 @@ class TransportationSolver(QMainWindow):
         self.demand_table.setRowCount(1)
         self.demand_table.setColumnCount(destinations)
         
-        # Восстанавливаем данные, которые влезают в новые размеры
         for i in range(sources):
             for j in range(destinations):
                 val = 0
@@ -420,23 +392,6 @@ class TransportationSolver(QMainWindow):
             item = QTableWidgetItem(str(val))
             item.setTextAlignment(Qt.AlignCenter)
             self.demand_table.setItem(0, j, item)
-        
-        # Заполняем оставшиеся ячейки значениями по умолчанию
-        # for i in range(len(old_costs), sources):
-        #     for j in range(len(old_costs[0]) if old_costs else 0, destinations):
-        #         item = QTableWidgetItem("10")
-        #         item.setTextAlignment(Qt.AlignCenter)
-        #         self.costs_table.setItem(i, j, item)
-        
-        # for i in range(len(old_supply), sources):
-        #     item = QTableWidgetItem("100")
-        #     item.setTextAlignment(Qt.AlignCenter)
-        #     self.supply_table.setItem(i, 0, item)
-        
-        # for j in range(len(old_demand), destinations):
-        #     item = QTableWidgetItem("80")
-        #     item.setTextAlignment(Qt.AlignCenter)
-        #     self.demand_table.setItem(0, j, item)
     
     def extract_data(self):
         sources = self.source_spin.value()

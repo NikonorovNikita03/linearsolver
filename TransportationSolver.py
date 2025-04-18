@@ -21,7 +21,6 @@ class TransportationSolver(QMainWindow):
         self.main_layout = QVBoxLayout()
         self.central_widget.setLayout(self.main_layout)
         
-        # Создаём отдельный виджет для статуса
         self.status_label = QLabel()
         self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.setStyleSheet("padding: 3px; background: #f0f0f0; border-top: 1px solid #ccc;")
@@ -34,10 +33,8 @@ class TransportationSolver(QMainWindow):
         self.create_input_table()
         self.create_solution_tabs()
         
-        # Добавляем виджет статуса в основной layout
         self.main_layout.addWidget(self.status_label)
         
-        # Initialize with default problem size
         self.update_table_size()
     
     def create_controls(self):
@@ -47,7 +44,6 @@ class TransportationSolver(QMainWindow):
         control_layout.setContentsMargins(5, 5, 5, 5)
         control_layout.setSpacing(10)
         
-        # Source controls
         source_layout = QVBoxLayout()
         source_layout.setSpacing(0)
         source_layout.addWidget(QLabel("Поставщики:"))
@@ -57,7 +53,6 @@ class TransportationSolver(QMainWindow):
         self.source_spin.valueChanged.connect(self.update_table_size)
         source_layout.addWidget(self.source_spin)
         
-        # Destination controls
         dest_layout = QVBoxLayout()
         dest_layout.setSpacing(0)
         dest_layout.addWidget(QLabel("Потребители:"))
@@ -67,7 +62,6 @@ class TransportationSolver(QMainWindow):
         self.dest_spin.valueChanged.connect(self.update_table_size)
         dest_layout.addWidget(self.dest_spin)
         
-        # Method selection
         method_layout = QVBoxLayout()
         method_layout.setSpacing(0)
         method_layout.addWidget(QLabel("Метод:"))
@@ -77,9 +71,8 @@ class TransportationSolver(QMainWindow):
         ])
         method_layout.addWidget(self.method_combo)
         
-        # Solve button
         self.solve_btn = QPushButton("Решить")
-        self.solve_btn.setFixedHeight(60)  # Фиксированная высота для выравнивания
+        self.solve_btn.setFixedHeight(60)
         self.solve_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50; 
@@ -93,7 +86,6 @@ class TransportationSolver(QMainWindow):
         """)
         self.solve_btn.clicked.connect(self.solve_problem)
         
-        # Add all controls to layout
         control_layout.addLayout(source_layout)
         control_layout.addLayout(dest_layout)
         control_layout.addLayout(method_layout)
@@ -108,29 +100,24 @@ class TransportationSolver(QMainWindow):
         input_group = QGroupBox("Исходные данные")
         layout = QVBoxLayout()
         
-        # Create table
         self.input_table = QTableWidget()
         self.input_table.setStyleSheet("QTableWidget { font-size: 12px; }")
         self.input_table.itemChanged.connect(self.update_balance_cell)
         
-        # Configure table headers and resize behavior
         header = self.input_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)  # Равномерное растяжение колонок
+        header.setSectionResizeMode(QHeaderView.Stretch)
         header.setDefaultAlignment(Qt.AlignCenter)
         
         v_header = self.input_table.verticalHeader()
-        v_header.setSectionResizeMode(QHeaderView.Stretch)  # Равномерное растяжение строк
+        v_header.setSectionResizeMode(QHeaderView.Stretch)
         v_header.setDefaultAlignment(Qt.AlignCenter)
         
-        # Create button row
         btn_layout = QHBoxLayout()
         
-        # Copy button
         copy_btn = QPushButton("Копировать данные")
         copy_btn.setStyleSheet("background-color: #2196F3; color: white;")
         copy_btn.clicked.connect(lambda: self.copy_table_data(self.input_table))
         
-        # Paste button
         paste_btn = QPushButton("Вставить данные")
         paste_btn.setStyleSheet("background-color: #FF9800; color: white;")
         paste_btn.clicked.connect(self.paste_data_to_table)
@@ -145,9 +132,8 @@ class TransportationSolver(QMainWindow):
         self.main_layout.addWidget(input_group)
     
     def create_solution_tabs(self):
-        """Create tab widget for solution display"""
         self.tabs = QTabWidget()
-        # Явное выделение вкладок
+        
         self.tabs.setStyleSheet("""
             QTabBar::tab {
                 padding: 8px 15px;
@@ -174,7 +160,6 @@ class TransportationSolver(QMainWindow):
             }
         """)
         
-        # Tab 1: Solution matrix
         self.solution_tab = QWidget()
         solution_layout = QVBoxLayout()
         
@@ -182,7 +167,6 @@ class TransportationSolver(QMainWindow):
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
         
-        # Configure solution table resize behavior
         s_header = self.solution_table.horizontalHeader()
         s_header.setSectionResizeMode(QHeaderView.Stretch)
         s_header.setDefaultAlignment(Qt.AlignCenter)
@@ -204,7 +188,6 @@ class TransportationSolver(QMainWindow):
         solution_layout.addLayout(btn_layout)
         self.solution_tab.setLayout(solution_layout)
         
-        # Tab 2: Solution summary
         self.summary_tab = QWidget()
         summary_layout = QVBoxLayout()
         
@@ -216,18 +199,15 @@ class TransportationSolver(QMainWindow):
         summary_layout.addWidget(self.solution_text)
         self.summary_tab.setLayout(summary_layout)
         
-        # Add tabs
         self.tabs.addTab(self.solution_tab, "Распределение")
         self.tabs.addTab(self.summary_tab, "Результаты")
         
         self.main_layout.addWidget(self.tabs)
     
     def copy_table_data(self, table):
-        """Copy only the cell values without headers to clipboard"""
         if not table:
             return
             
-        # Get all data from the table
         data = []
         for row in range(table.rowCount()):
             row_data = []
@@ -236,17 +216,14 @@ class TransportationSolver(QMainWindow):
                 row_data.append(item.text() if item else "")
             data.append("\t".join(row_data))
         
-        # Put the data in clipboard
         clipboard = QApplication.clipboard()
         mime_data = QMimeData()
         mime_data.setText("\n".join(data))
         clipboard.setMimeData(mime_data)
         
-        # Show temporary status message
         self.show_status_message("Данные скопированы в буфер обмена!")
     
     def paste_data_to_table(self):
-        """Paste data from clipboard to input table"""
         clipboard = QApplication.clipboard()
         text = clipboard.text().strip()
         
@@ -254,16 +231,13 @@ class TransportationSolver(QMainWindow):
             self.show_status_message("Буфер обмена пуст!")
             return
         
-        # Split clipboard data into rows
         rows = [row for row in text.split('\n') if row.strip()]
         if not rows:
             self.show_status_message("Нет данных в буфере обмена!")
             return
         
-        # Split each row into columns
         data = [row.split('\t') for row in rows]
         
-        # Disconnect itemChanged signal to avoid multiple updates
         self.input_table.itemChanged.disconnect(self.update_balance_cell)
         
         try:
@@ -273,10 +247,8 @@ class TransportationSolver(QMainWindow):
             self.source_spin.setValue(num_rows - 1)
             self.dest_spin.setValue(num_cols - 1)
             
-            # Insert as much data as possible without errors
             for row_idx in range(min(len(data), self.input_table.rowCount())):
                 for col_idx in range(min(len(data[row_idx]), self.input_table.columnCount())):
-                    # Skip bottom-right cell (balance cell)
                     if row_idx == self.input_table.rowCount()-1 and col_idx == self.input_table.columnCount()-1:
                         continue
                         
@@ -289,34 +261,28 @@ class TransportationSolver(QMainWindow):
         except Exception as e:
             self.show_status_message(f"Ошибка при вставке данных: {str(e)}")
         finally:
-            # Reconnect signal and update balance
             self.input_table.itemChanged.connect(self.update_balance_cell)
             self.update_balance_cell()
     
     def update_balance_cell(self):
-        """Update the balance cell (bottom-right) with supply-demand difference"""
-        # Disconnect signal to avoid recursion
         self.input_table.itemChanged.disconnect(self.update_balance_cell)
         
         try:
             sources = self.source_spin.value()
             destinations = self.dest_spin.value()
             
-            # Calculate total supply
             total_supply = 0
             for i in range(sources):
                 item = self.input_table.item(i, destinations)
                 if item and item.text().isdigit():
                     total_supply += int(item.text())
             
-            # Calculate total demand
             total_demand = 0
             for j in range(destinations):
                 item = self.input_table.item(sources, j)
                 if item and item.text().isdigit():
                     total_demand += int(item.text())
             
-            # Update balance cell
             balance = total_supply - total_demand
             balance_item = self.input_table.item(sources, destinations)
             if not balance_item:
@@ -327,7 +293,6 @@ class TransportationSolver(QMainWindow):
             
             balance_item.setText(str(balance))
             
-            # Color coding for balance
             if balance > 0:
                 balance_item.setBackground(Qt.green)
             elif balance < 0:
@@ -338,26 +303,20 @@ class TransportationSolver(QMainWindow):
         except Exception as e:
             print(f"Error updating balance: {e}")
         finally:
-            # Reconnect signal
             self.input_table.itemChanged.connect(self.update_balance_cell)
     
     def show_status_message(self, message):
-        """Display status message in the dedicated label"""
         self.status_label.setText(message)
     
     def update_table_size(self):
-        """Update the input table dimensions based on sources/destinations"""
         sources = self.source_spin.value()
         destinations = self.dest_spin.value()
         
-        # Disconnect signal to avoid multiple updates
         self.input_table.itemChanged.disconnect(self.update_balance_cell)
         
-        # Set row and column count (sources + 1 for demand row, destinations + 1 for supply column)
         self.input_table.setRowCount(sources + 1)
         self.input_table.setColumnCount(destinations + 1)
         
-        # Set headers
         headers = [f"Потр. {j+1}" for j in range(destinations)] + ["Запасы"]
         self.input_table.setHorizontalHeaderLabels(headers)
         
@@ -372,24 +331,20 @@ class TransportationSolver(QMainWindow):
                 item.setTextAlignment(Qt.AlignCenter)
                 self.input_table.setItem(i, j, item)
             
-            # Supply column
             item = QTableWidgetItem("100")
             item.setTextAlignment(Qt.AlignCenter)
             self.input_table.setItem(i, destinations, item)
         
-        # Demand row
         for j in range(destinations):
             item = QTableWidgetItem("80")
             item.setTextAlignment(Qt.AlignCenter)
             self.input_table.setItem(sources, j, item)
         
-        # Bottom-right cell (balance cell)
         balance_item = QTableWidgetItem()
         balance_item.setFlags(balance_item.flags() & ~Qt.ItemIsEditable)
         balance_item.setTextAlignment(Qt.AlignCenter)
         self.input_table.setItem(sources, destinations, balance_item)
         
-        # Update balance and reconnect signal
         self.update_balance_cell()
         self.input_table.itemChanged.connect(self.update_balance_cell)
     
@@ -456,5 +411,5 @@ class TransportationSolver(QMainWindow):
                 summary += f"Поставщик {i+1} → Потребитель {j+1}: {value} единиц\n"
         
         self.solution_text.setPlainText(summary)
-        self.tabs.setCurrentIndex(0)  # Switch to solution tab
+        self.tabs.setCurrentIndex(0)
         self.show_status_message("Задача решена!")

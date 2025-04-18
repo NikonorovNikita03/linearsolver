@@ -14,9 +14,7 @@ class Solver(object):
         a, b, _, C = self.__surplus()
         m, n = C.shape
         # Целевая функция (минимизация суммарной стоимости)
-        print(C)
         c = C.flatten()
-        print(c)
         # Ограничения: сумма по строкам = a, сумма по столбцам = b
         A_eq = []
         # Ограничения по запасам (каждая строка)
@@ -70,7 +68,7 @@ class Solver(object):
             if mins[(i, k)] == 1:
                 d_1[(i, k)] = (c_m_tmp[i][k])
         
-        print(sorted(d_2, key=d_2.get) + sorted(d_1, key=d_1.get))
+        #print(sorted(d_2, key=d_2.get) + sorted(d_1, key=d_1.get))
         for i, k in sorted(d_2, key=d_2.get) + sorted(d_1, key=d_1.get):
             # print(s_v_tmp[i], d_v_tmp[k])
             # print(s_v_tmp)
@@ -78,7 +76,7 @@ class Solver(object):
             s_v_tmp[i] -= min_val
             d_v_tmp[k] -= min_val
             t_m_tmp[i][k] = min_val
-            print(t_m_tmp)
+            #print(t_m_tmp)
         
         
 
