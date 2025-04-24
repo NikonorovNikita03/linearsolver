@@ -515,7 +515,15 @@ class TransportationSolver(QMainWindow):
         costs, supply, demand = self.extract_data()
 
         problem = Solver(supply, demand, costs)
-        result_matrix, self.total_cost = problem.solve_transportation_scipy()
+
+        problem_type = "time"
+        match problem_type:
+            case "time":
+                time_vector = [4, 3, 6, 4]
+                speed_matrix = [[8, 6, 10, 8], [10, 10, 14, 10], [3, 6, 6, 6]]
+                result_matrix, self.total_cost = problem.solve_transportation_scipy_time(time_vector, speed_matrix)
+            case _:
+                result_matrix, self.total_cost = problem.solve_transportation_scipy_standard()
 
         sources, destinations = len(result_matrix), len(result_matrix[0])
 

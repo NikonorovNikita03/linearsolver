@@ -9,20 +9,58 @@ class Solver(object):
         self.cost_matrix = np.array(c_m)
         self.transport_matrix = np.zeros((self.supply_vector.size, self.demand_vector.size))
 
-    def solve_transportation_scipy(self):
-        #a, b, C = self.supply_vector, self.demand_vector, self.cost_matrix
+    
+    # def solve_transportation_scipy(self):
+    #     problem = "standard"
+        
+    #     if True:
+    #         problem = "time"
+    #     match problem:
+    #         case "time":
+    #             return self.solve_transportation_scipy_time()
+    #         case _:
+    #             return self.solve_transportation_scipy_standard()
+
+
+    def solve_transportation_scipy_time(self, time_vector, speed_matrix):
         a, b, _, C = self.__surplus()
         m, n = C.shape
-        # Целевая функция (минимизация суммарной стоимости)
         c = C.flatten()
-        # Ограничения: сумма по строкам = a, сумма по столбцам = b
+        time_vector, speed_matrix = np.array(time_vector), np.array(speed_matrix)
+        
         A_eq = []
-        # Ограничения по запасам (каждая строка)
         for i in range(m):
             row = np.zeros((m, n))
             row[i, :] = 1
             A_eq.append(row.flatten())
-        # Ограничения по потребностям (каждый столбец)
+        for j in range(n):
+            col = np.zeros((m, n))
+            col[:, j] = 1
+            A_eq.append(col.flatten())
+        A_eq = np.array(A_eq)
+        b_eq = np.concatenate([a, b])
+
+        bounds = []
+        for row in speed_matrix:
+            for i in range(len(row)):
+                bounds.append((0, time_vector[i] * row[i]))
+        
+        res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+        X = res.x.reshape((m, n))
+        total_cost = np.sum(X * C)
+        return X, total_cost
+
+
+    def solve_transportation_scipy_standard(self):
+        a, b, _, C = self.__surplus()
+        m, n = C.shape
+        c = C.flatten()
+
+        A_eq = []
+        for i in range(m):
+            row = np.zeros((m, n))
+            row[i, :] = 1
+            A_eq.append(row.flatten())
         for j in range(n):
             col = np.zeros((m, n))
             col[:, j] = 1
@@ -30,8 +68,13 @@ class Solver(object):
         A_eq = np.array(A_eq)
         b_eq = np.concatenate([a, b])
         
-        # Решение задачи линейного программирования
-        res = linprog(c, A_eq=A_eq[:-1], b_eq=b_eq[:-1], bounds=(0, None))
+        # print(A_eq)
+        # print(A_eq[:-1])
+
+        # print(b_eq)
+        # print(b_eq[:-1])
+        #res = linprog(c, A_eq=A_eq[:-1], b_eq=b_eq[:-1], bounds=(0, None))
+        res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=(0, None))
         X = res.x.reshape((m, n))
         total_cost = np.sum(X * C)
         return X, total_cost
