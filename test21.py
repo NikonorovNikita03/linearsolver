@@ -170,7 +170,6 @@ class TransportationSolver(QMainWindow):
     
     def create_input_tables(self):
         input_layout = QVBoxLayout()
-        
         top_area = QHBoxLayout()
         
         costs_group = QGroupBox("Стоимости перевозок")
@@ -180,14 +179,16 @@ class TransportationSolver(QMainWindow):
         self.costs_table.setStyleSheet("QTableWidget { font-size: 12px; }")
         
         header = self.costs_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
+        #header.setStyleSheet("QHeaderView::section { background-color: transparent; }")
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         header.setDefaultAlignment(Qt.AlignCenter)
-        header.setVisible(False)
+        #header.setVisible(False)
         
         v_header = self.costs_table.verticalHeader()
-        v_header.setSectionResizeMode(QHeaderView.Stretch)
+        #v_header.setStyleSheet("QHeaderView::section { background-color: transparent; }")
+        v_header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         v_header.setDefaultAlignment(Qt.AlignCenter)
-        v_header.setVisible(False)
+        #v_header.setVisible(False)
         
         costs_btn_layout = QHBoxLayout()
 
@@ -468,9 +469,18 @@ class TransportationSolver(QMainWindow):
     def update_table_size(self):
         sources = self.source_spin.value()
         destinations = self.dest_spin.value()
-        
+
         self.costs_table.setRowCount(sources)
         self.costs_table.setColumnCount(destinations)
+        header = self.supply_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for i in range(1, sources):
+            header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        v_header = self.supply_table.verticalHeader()
+        v_header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for j in range(1, destinations):
+            v_header.setSectionResizeMode(j, QHeaderView.ResizeMode.ResizeToContents)
+
         
         self.supply_table.setRowCount(sources)
         self.supply_table.setColumnCount(1)
@@ -514,16 +524,39 @@ class TransportationSolver(QMainWindow):
     def solve_problem(self):
         costs, supply, demand = self.extract_data()
 
-        problem = Solver(supply, demand, costs)
+        # time_vector = [4, 3, 6, 4]
+        # speed_matrix = [[8, 6, 10, 8], [10, 10, 14, 10], [3, 6, 6, 6]]
 
-        problem_type = "time"
-        match problem_type:
-            case "time":
-                time_vector = [4, 3, 6, 4]
-                speed_matrix = [[8, 6, 10, 8], [10, 10, 14, 10], [3, 6, 6, 6]]
-                result_matrix, self.total_cost = problem.solve_transportation_scipy_time(time_vector, speed_matrix)
-            case _:
-                result_matrix, self.total_cost = problem.solve_transportation_scipy_standard()
+        # supply = [20, 3]
+        # demand = [8, 8, 7]
+        # bounds = (0, 1, 5)
+        # costs = [
+        #     [2, 4, 1],
+        #     [3, 1, 5]
+        # ]
+
+        # costs = [
+        #     [[595, 780], [480, 665], [455, 640], [430, 815]],
+        #     [[435, 735], [530, 735], [480, 680], [485, 585]],
+        #     [[545, 715], [465, 755], [525, 815], [440, 795]]
+        # ]
+
+        # supply = [[21, 21], [33, 42], [17, 57]]
+        # demand = [[15, 20], [22, 26], [12, 22], [32, 42]]
+
+
+
+        #problem = Solver(supply, demand, costs, time_vector, speed_matrix)
+        problem = Solver(supply,demand,costs)
+        # problem.solve_transportation_scipy_standard()
+#result_matrix, self.total_cost = 
+        # problem_type = "time"
+        # match problem_type:
+        #     case "time":
+                
+                
+        #     case _:
+        result_matrix, self.total_cost = problem.solve_transportation_scipy()
 
         sources, destinations = len(result_matrix), len(result_matrix[0])
 

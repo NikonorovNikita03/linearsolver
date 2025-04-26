@@ -70,10 +70,10 @@ class TransportationSolver(QMainWindow):
         self.method_combo = QComboBox()
         self.method_combo.addItems([
             "Автоматически",
-            "Северо-западный угол",
-            "Минимальный элемент",
-            "Метод Фогеля",
-            "Метод MODI"
+            # "Северо-западный угол",
+            # "Минимальный элемент",
+            # "Метод Фогеля",
+            # "Метод MODI"
         ])
         method_layout.addWidget(self.method_combo)
         

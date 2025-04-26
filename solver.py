@@ -3,11 +3,15 @@ from scipy.optimize import linprog
 
 class Solver(object):
 
-    def __init__(self, s_v, d_v, c_m):
-        self.supply_vector = np.array(s_v)
-        self.demand_vector = np.array(d_v)
-        self.cost_matrix = np.array(c_m)
-        self.transport_matrix = np.zeros((self.supply_vector.size, self.demand_vector.size))
+    def __init__(self, s_v, d_v, c_m, time_vector=None, speed_matrix=None, bound_top = None, bound_down = None):
+        self.supply_vector = s_v
+        self.demand_vector = d_v
+        self.cost_matrix = c_m
+
+        self.time_vector = time_vector
+        self.speed_matrix = speed_matrix
+        self.bound_top = bound_top
+        self.bound_down = bound_down
 
     
     # def solve_transportation_scipy(self):
@@ -21,8 +25,139 @@ class Solver(object):
     #         case _:
     #             return self.solve_transportation_scipy_standard()
 
+    def solve_transportation_scipy_double(self):
+        supply = self.supply_vector
+        demand = self.demand_vector
+        costs = self.cost_matrix
 
-    def solve_transportation_scipy_time(self, time_vector, speed_matrix):
+        n_sources = len(supply)  # количество поставщиков (включая фиктивного)
+        n_destinations = len(demand)  # количество потребителей (включая фиктивного)
+        n_products = len(supply[0])  # количество продуктов
+
+        for n in range(n_products):
+            supply_n = sum([supply[x][n] for x in range(n_sources)])
+            demand_n = sum([demand[x][n] for x in range(n_destinations)])
+
+            if supply_n > demand_n:
+                for i in range(len(costs)):
+                    costs[i].append([0 for i in range(n_products)])
+                new_demand = [0 for i in range(n_products)]
+                new_demand[n] = supply_n - demand_n
+                demand.append(new_demand)
+                n_destinations += 1
+
+            if supply_n < demand_n:
+                costs.append([[0 for i in range(n_products)] for j in range(n_destinations)])
+                new_supply = np.zeros(n_products)
+                new_supply[n] = demand_n - supply_n
+                supply.append(new_supply)
+                n_sources += 1
+
+        costs = np.array(costs)
+        supply = np.array(supply)
+        demand = np.array(demand)
+
+        c_list = []
+        for i in range(n_sources):
+            for j in range(n_destinations):
+                for p in range(n_products):
+                    c_list.append(costs[i, j, p] if i < 3 else 0)  # фиктивный поставщик имеет нулевую стоимость
+
+        c = np.array(c_list)
+
+        num_vars = n_sources * n_destinations * n_products
+        A_eq = []
+        b_eq = []
+
+        for i in range(n_sources):
+            for p in range(n_products):
+                row = np.zeros(num_vars)
+                for j in range(n_destinations):
+                    idx = (i * n_destinations * n_products) + (j * n_products) + p
+                    row[idx] = 1
+                A_eq.append(row)
+                b_eq.append(supply[i, p])
+
+        for j in range(n_destinations):
+            for p in range(n_products):
+                row = np.zeros(num_vars)
+                for i in range(n_sources):
+                    idx = (i * n_destinations * n_products) + (j * n_products) + p
+                    row[idx] = 1
+                A_eq.append(row)
+                b_eq.append(demand[j, p])
+
+        A_eq = np.array(A_eq)
+        b_eq = np.array(b_eq)
+
+        bounds = [(0, None) for _ in range(num_vars)]
+
+        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+        print(result.x.reshape((n_sources, n_destinations, n_products)))
+        #X = res.x.reshape((m, n))
+
+
+    def solve_transportation_scipy(self):
+        if self.bound_top:
+            
+            supply_index = self.bound_top[0]
+            old_supply = self.supply_vector[supply_index]
+            self.supply_vector[supply_index] = self.bound_top[2]        
+            self.supply_vector = np.insert(np.copy(self.supply_vector), supply_index + 1, old_supply - self.bound_top[2])
+            #self.supply_vector.insert(supply_index + 1, old_supply - self.bound_top[2])
+
+            row_i = self.cost_matrix[supply_index, :].copy()
+            new_row_for_i_b = row_i.copy()
+            new_row_for_i_b[self.bound_top[1]] = 0
+
+            self.cost_matrix = np.insert(np.copy(self.cost_matrix), supply_index + 1, new_row_for_i_b, axis=0)
+
+        if self.bound_down:
+            self.supply_vector[self.bound_down[0]] -= self.bound_down[2]
+            self.demand_vector[self.bound_down[1]] -= self.bound_down[2]
+
+        a, b, _, C = self.__surplus()
+        if self.bound_top:
+            result = self.nwc_rule()
+            return result[0], result[1]
+
+        m, n = C.shape
+        c = C.flatten()
+        
+        A_eq = []
+        for i in range(m):
+            row = np.zeros((m, n))
+            row[i, :] = 1
+            A_eq.append(row.flatten())
+        for j in range(n):
+            col = np.zeros((m, n))
+            col[:, j] = 1
+            A_eq.append(col.flatten())
+        A_eq = np.array(A_eq)
+        b_eq = np.concatenate([a, b])
+
+        bounds = (0, None)
+        if self.time_vector and self.speed_matrix:
+            tv = np.array(self.time_vector)
+            sm = np.array(self.speed_matrix)
+            bounds = []
+            for row in sm:
+                for i in range(len(row)):
+                    bounds.append((0, tv[i] * row[i]))
+        
+
+        res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+        X = res.x.reshape((m, n))
+
+        if self.bound_down:
+            X[self.bound_down[0], self.bound_down[1]] += self.bound_down[2]
+
+        total_cost = np.sum(X * C)
+        return X, total_cost
+
+
+
+    def solve_transportation_scipy_time_(self, time_vector, speed_matrix):
         a, b, _, C = self.__surplus()
         m, n = C.shape
         c = C.flatten()
@@ -184,6 +319,8 @@ class Solver(object):
         i = 0
         s_v_tmp, d_v_tmp, t_m_tmp, c_m_tmp = self.__surplus()
 
+        print(t_m_tmp)
+
         while j < d_v_tmp.size and i < s_v_tmp.size:
             amount = min(d_v_tmp[j], s_v_tmp[i])
 
@@ -267,7 +404,7 @@ class Solver(object):
     def __surplus(self):
         s_v_tmp = np.copy(self.supply_vector)
         d_v_tmp = np.copy(self.demand_vector)
-        t_m_tmp = np.copy(self.transport_matrix)
+        t_m_tmp = np.copy(np.zeros((s_v_tmp.size, d_v_tmp.size)))
         c_m_tmp = np.copy(self.cost_matrix)
 
         infinity = np.inf
