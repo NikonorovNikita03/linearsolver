@@ -42,3 +42,10 @@ def combine_arrays_1d_pure(arr1, arr2):
     result = arr1.copy() + arr2[len1:]
     
     return result
+
+def str_to_number(s):
+    try:
+        f = float(s)
+        return int(f) if f.is_integer() else f
+    except:
+        return 0

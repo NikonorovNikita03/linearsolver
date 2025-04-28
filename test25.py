@@ -2,7 +2,7 @@ import sys
 import csv
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QTableWidget, QTableWidgetItem, QGroupBox, QPushButton,
+    QTableWidget, QTableWidgetItem, QGroupBox, QPushButton, QSizePolicy,
     QLabel, QSpinBox, QMessageBox, QFileDialog, QStackedWidget, QHeaderView,
     #QTextEdit
 )
@@ -19,19 +19,30 @@ class TransportationSolver(QMainWindow):
         super().__init__()
         self.setWindowTitle("Решение задач линейного программирования")
         self.settings = functions.get_settings()
+        self.settings["current"] = "standard"
         self.setGeometry(100, 100, self.settings["width"], self.settings["height"])
 
-        self.costs = [
-            [4, 8, 8],
-            [16, 24, 16],
-            [8, 16, 24]
-        ]
-        self.supply = [76, 82, 77]
-        self.demand = [72, 102, 41]
-        # self.costs = [[1 for x in range(self.settings["size_x"])] for y in range(self.settings["size_y"])]
-        # self.supply = [2 for y in range(self.settings["size_y"])]
-        # self.demand = [3 for x in range(self.settings["size_x"])]
+        # self.costs = [
+        #     [4, 8, 8],
+        #     [16, 24, 16],
+        #     [8, 16, 24]
+        # ]
+        # self.supply = [76, 82, 77]
+        # self.demand = [72, 102, 41]
+        self.product_names = ["Продукт 1", "Продукт 2"]
+        self.costs = [[0 for x in range(self.settings["size_x"])] for y in range(self.settings["size_y"])]
+        self.supply = [0 for y in range(self.settings["size_y"])]
+        self.demand = [0 for x in range(self.settings["size_x"])]
         self.total_cost = 0
+
+        self.multi_costs = []
+        for y in range(self.settings["size_y"]):
+            self.multi_costs.append([])
+            for x in range(self.settings['size_x']):
+                self.multi_costs[y].append([0, 0])
+
+        self.multi_supply = [[0, 0] for x in range(self.settings["size_y"])]
+        self.multi_demand = [[0, 0] for x in range(self.settings["size_x"])]
 
         self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.settings["size_y"] + 1)] + ["Потребители"]
         self.demand_labels = [f"Потребитель {x}" for x in range(1, self.settings["size_x"] + 1)] + ["Поставщики"]
@@ -64,12 +75,20 @@ class TransportationSolver(QMainWindow):
         
         self.solution_page = QWidget()
         self.create_solution_page()
+
+        self.multiproduct_page = QWidget()
+        self.create_multiproduct_page()
+
+        self.examples_page = QWidget()  # Новая страница с примерами
+        self.create_examples_page() 
         
         # self.text_input_page = QWidget()
         # self.create_text_input_page()
         
         self.stacked_widget.addWidget(self.input_page)
         self.stacked_widget.addWidget(self.solution_page)
+        self.stacked_widget.addWidget(self.multiproduct_page)
+        self.stacked_widget.addWidget(self.examples_page)
         # self.stacked_widget.addWidget(self.text_input_page)
         
         self.main_layout.addWidget(self.stacked_widget)
@@ -77,6 +96,179 @@ class TransportationSolver(QMainWindow):
 
         self.update_table_size()
         self.write_data_into_input_table()
+    
+    def create_multiproduct_page(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        group = QGroupBox("Мультипродуктовая задача")
+        group_layout = QVBoxLayout()
+        
+        self.multiproduct_table = QTableWidget()
+        self.multiproduct_table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        
+        btn_layout = QHBoxLayout()
+        copy_btn = self.q_push_button("Копировать", "background-color: #2196F3; color: white;", 
+                                    lambda: self.copy_table_data(self.multiproduct_table))
+        paste_btn = self.q_push_button("Вставить", "background-color: #FF9800; color: white;", 
+                                    lambda: self.paste_data_to_table(self.multiproduct_table))
+        
+        btn_layout.addStretch()
+        btn_layout.addWidget(copy_btn)
+        btn_layout.addWidget(paste_btn)
+        
+        group_layout.addWidget(self.multiproduct_table)
+        group_layout.addLayout(btn_layout)
+        group.setLayout(group_layout)
+        
+        layout.addWidget(group)
+        self.multiproduct_page.setLayout(layout)        
+        
+        # Инициализация пустой таблицы
+        #self.init_empty_multiproduct_table()
+        self.write_data_into_double_table()
+
+    def get_data_from_double_table(self):
+        rows = self.multiproduct_table.rowCount()
+        cols = self.multiproduct_table.columnCount()
+        
+        # if rows < 3 or cols < 3:  # Минимум 1 поставщик, 1 потребитель + заголовки
+        #     raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
+
+        # new_demand_labels = []
+        # for col in range(1, destinations + 2):
+        #     item = self.combined_table.item(0, col)
+        #     new_demand_labels.append(item.text())
+        
+        # new_supply_labels = []
+        # for row in range(1, sources + 2):
+        #     item = self.combined_table.item(row, 0)
+        #     new_supply_labels.append(item.text())
+            
+        new_supply = []
+        for row in range(self.settings["size_y"]):
+            item = [
+                self.multiproduct_table.item(2 + row * 2, cols - 1),
+                self.multiproduct_table.item(3 + row * 2, cols - 1)
+            ]
+            new_supply.append([
+                int(item[0].text()) if item[0].text().isdigit() else 0,
+                int(item[1].text()) if item[1].text().isdigit() else 0,
+            ])
+
+        
+        new_demand = []
+        for col in range(self.settings["size_x"]):
+            item = [
+                self.multiproduct_table.item(rows - 1, 2 + col * 2),
+                self.multiproduct_table.item(rows - 1, 3 + col * 2),
+            ]
+            new_demand.append([
+                int(item[0].text()) if item[0].text().isdigit() else 0,
+                int(item[1].text()) if item[1].text().isdigit() else 0,
+            ])
+        
+        new_costs = []
+        for row in range(self.settings["size_y"]):
+            cost_row = []
+            for col in range(self.settings["size_x"]):
+                item = [
+                    self.multiproduct_table.item(2 + row * 2, 2 + col * 2),
+                    self.multiproduct_table.item(3 + row * 2, 3 + col * 2),
+                ]
+                cost_row.append([
+                    int(item[0].text()) if item[0].text().isdigit() else 0,
+                    int(item[1].text()) if item[1].text().isdigit() else 0,
+                ])
+            new_costs.append(cost_row)
+
+
+        self.multi_supply = functions.combine_arrays_1d_pure(new_supply, self.multi_supply)
+        self.multi_demand = functions.combine_arrays_1d_pure(new_demand, self.multi_demand)
+        self.multi_costs = functions.combine_arrays_pure(new_costs, self.multi_costs)
+        # self.supply_labels = functions.combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
+        # self.demand_labels = functions.combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
+
+    def write_data_into_double_table(self):
+        size_y = 3 + 2 * self.settings["size_y"]
+        size_x = 3 + 2 * self.settings["size_x"]
+        product_number = len(self.product_names)
+        self.multiproduct_table.setRowCount(size_y)
+        self.multiproduct_table.setColumnCount(size_x)
+
+        for i in range(product_number, size_x - 1, product_number):
+            self.multiproduct_table.setSpan(0, i, 1, product_number)
+
+        for i in range(product_number, size_y - 1, product_number):
+            self.multiproduct_table.setSpan(i, 0, product_number, 1)
+        
+        to_write = [["" for i in range(size_x)]]
+
+        to_write.append(["", ""])
+        for i in range(self.settings["size_x"]):
+            to_write[1] += self.product_names
+        to_write[1] += [""]
+
+        for i in range(self.settings["size_y"]):
+            to_write.append(["0" for x in range(size_x)])
+            to_write.append(["0" for x in range(size_x)])
+            for j in range(len(self.multi_costs[0])):
+                to_write[2 * i + 2][2 + 2 * j] = self.multi_costs[i][j][0]
+                to_write[2 * i + 3][3 + 2 * j] = self.multi_costs[i][j][1]
+
+            to_write[2 * i + 2][1] = self.product_names[0]
+            to_write[2 * i + 3][1] = self.product_names[1]
+
+            to_write[2 * i + 2][-1] = self.multi_supply[i][0]
+            to_write[2 * i + 3][-1] = self.multi_supply[i][1]
+
+        to_write.append(["0" for x in range(size_x)])
+        
+        for i in range(self.settings["size_x"]):
+            to_write[-1][2 * i + 2] = self.multi_demand[i][0]
+            to_write[-1][2 * i + 3] = self.multi_demand[i][1]
+        
+        to_write[-1][1] = ""
+        to_write[-1][-1] = ""
+
+
+        supply_counter = 0
+        demand_counter = 0
+        for y in range(size_y):
+            for x in range(size_x):
+                item = QTableWidgetItem(str(to_write[y][x]))
+                if x == 0:
+                    if y < 2 or y % product_number != 0:
+                        continue
+                    else:
+                        item = QTableWidgetItem(self.supply_labels[supply_counter])
+                        supply_counter += 1
+                if y == 0:
+                    if x < 2 or x % product_number != 0:
+                        continue
+                    else:
+                        item = QTableWidgetItem(self.demand_labels[demand_counter])
+                        demand_counter += 1
+                if size_x - 1 > x > 1 and size_y - 1 > y > 1 and ((x % 2 == 0 and y % 2 == 1) or (x % 2 == 1 and y % 2 == 0)):
+                    item.setBackground(self.brushes["black"])
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                item.setTextAlignment(Qt.AlignCenter)
+                self.multiproduct_table.setItem(y, x, item)
+    
+        for i in range(self.multiproduct_table.columnCount()):
+            self.multiproduct_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+        
+        for i in range(self.multiproduct_table.rowCount()):
+            self.multiproduct_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+
+    def show_multiproduct_table(self):
+        self.control_group.setVisible(True)
+        self.stacked_widget.setCurrentWidget(self.multiproduct_page)
+        self.solve_btn.setVisible(True)
+        self.examples_btn.setVisible(True)
+        self.back_btn.setVisible(False)
+        self.settings["current"] = "multi"
+        #self.multiproduct_btn.setVisible(False)
     
     def q_push_button(self, name, style, function, cursor=True):
         btn = QPushButton(name)
@@ -116,39 +308,172 @@ class TransportationSolver(QMainWindow):
         control_layout.setContentsMargins(5, 5, 5, 5)
         control_layout.setSpacing(10)
         
-        source_layout = QVBoxLayout()
-        source_layout.setSpacing(0)
-        source_layout.addWidget(QLabel("Поставщики:"))
+        self.source_layout = QVBoxLayout()
+        self.source_layout.setSpacing(0)
+        self.source_layout.addWidget(QLabel("Поставщики:"))
         self.source_spin = QSpinBox()
         self.source_spin.setRange(1, 10)
         self.source_spin.setValue(self.settings["size_y"])
         self.source_spin.valueChanged.connect(self.update_input_table)
-        source_layout.addWidget(self.source_spin)
+        self.source_layout.addWidget(self.source_spin)
         
-        dest_layout = QVBoxLayout()
-        dest_layout.setSpacing(0)
-        dest_layout.addWidget(QLabel("Потребители:"))
+        self.dest_layout = QVBoxLayout()
+        self.dest_layout.setSpacing(0)
+        self.dest_layout.addWidget(QLabel("Потребители:"))
         self.dest_spin = QSpinBox()
         self.dest_spin.setRange(1, 10)
         self.dest_spin.setValue(self.settings["size_x"])
         self.dest_spin.valueChanged.connect(self.update_input_table)
-        dest_layout.addWidget(self.dest_spin)
+        self.dest_layout.addWidget(self.dest_spin)
         
         #self.text_input_btn = self.q_push_button("Ввести текстом", constants.text_input_btn, self.show_text_input_page)
-        self.solve_btn = self.q_push_button("Решить", constants.solve_btn, self.solve_problem)
+        self.solve_btn = self.q_push_button("Решить", constants.solve_btn, self.solve)
+        #self.multiproduct_btn = self.q_push_button("Мультипродуктовая задача", constants.multiproduct_btn_ss, self.show_multiproduct_table)
+        self.examples_btn = self.q_push_button("Примеры", constants.examples_btn_ss, self.show_examples_page)
         
         self.back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
         self.back_btn.setVisible(False)
         
-        control_layout.addLayout(source_layout)
-        control_layout.addLayout(dest_layout)
+        control_layout.addLayout(self.source_layout)
+        control_layout.addLayout(self.dest_layout)
         control_layout.addStretch()
         #control_layout.addWidget(self.text_input_btn)
         control_layout.addWidget(self.back_btn)
+        control_layout.addWidget(self.examples_btn)
         control_layout.addWidget(self.solve_btn)
+        #control_layout.addWidget(self.multiproduct_btn)
+        
         
         self.control_group.setLayout(control_layout)
         self.main_layout.addWidget(self.control_group)
+
+    def create_examples_page(self):
+        main_layout = QHBoxLayout()
+        # main_layout.setContentsMargins(20, 20, 20, 20)
+        # main_layout.setSpacing(20)
+
+        top_layout = QHBoxLayout()
+        top_layout.addStretch()
+        top_layout.setAlignment(Qt.AlignTop)
+        back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
+        top_layout.addWidget(back_btn)
+        
+        bottom_layout = QHBoxLayout()
+        
+        # Первый ряд - выбор типа задачи
+        task_type_group = QGroupBox("Тип задачи")
+        task_type_layout = QVBoxLayout()
+        task_type_layout.setAlignment(Qt.AlignTop)
+        task_type_layout.setSpacing(10)
+        
+        transport_btn = self.q_push_button("Транспортная задача", "background-color: #4CAF50; color: white; padding: 8px;", 
+                                         self.show_input_page)
+        # assignment_btn = self.q_push_button("Задача назначения", "background-color: #2196F3; color: white; padding: 8px;", 
+        #                                   lambda: self.set_task_type("assignment"))
+        multiproduct_btn = self.q_push_button("Мультипродуктовая задача", "background-color: #FF9800; color: white; padding: 8px;", 
+                                            self.show_multiproduct_table)
+        
+        task_type_layout.addWidget(transport_btn)
+        # task_type_layout.addWidget(assignment_btn)
+        task_type_layout.addWidget(multiproduct_btn)
+        task_type_group.setLayout(task_type_layout)
+        
+        # Второй ряд - примеры для заполнения
+        examples_group = QGroupBox("Примеры для заполнения")
+        examples_layout = QVBoxLayout()
+        examples_layout.setAlignment(Qt.AlignTop)
+        examples_layout.setSpacing(10)
+        
+        example1_btn = self.q_push_button("Пример 1 (3x3)", "background-color: #607D8B; color: white; padding: 8px;", 
+                                        lambda: self.load_example(1))
+        example2_btn = self.q_push_button("Пример 2 (3x3)", "background-color: #607D8B; color: white; padding: 8px;", 
+                                        lambda: self.load_example(2))
+        example3_btn = self.q_push_button("Пример 3 (3x3)", "background-color: #607D8B; color: white; padding: 8px;", 
+                                        lambda: self.load_example(3))
+        example4_btn = self.q_push_button("Пример 4 (4x4)", "background-color: #9C27B0; color: white; padding: 8px;", 
+                                        lambda: self.load_example(4))
+        
+        examples_layout.addWidget(example1_btn)
+        examples_layout.addWidget(example2_btn)
+        examples_layout.addWidget(example3_btn)
+        examples_layout.addWidget(example4_btn)
+        examples_group.setLayout(examples_layout)
+        
+        empty_row = QWidget()
+        empty_row.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        bottom_layout.addWidget(task_type_group)
+        bottom_layout.addWidget(examples_group)
+        bottom_layout.addWidget(empty_row)        
+        
+        main_layout.addLayout(bottom_layout)
+        main_layout.addLayout(top_layout)
+        
+        
+        self.examples_page.setLayout(main_layout)
+
+    def show_examples_page(self):
+        self.control_group.setVisible(False)
+        self.stacked_widget.setCurrentWidget(self.examples_page)
+        self.solve_btn.setVisible(False)
+        self.back_btn.setVisible(False)
+#        self.multiproduct_btn.setVisible(False)
+        self.examples_btn.setVisible(False)
+
+    
+    def set_task_type(self, task_type):
+        # Здесь можно реализовать логику выбора типа задачи
+        self.show_status_message(f"Выбран тип задачи: {task_type}")
+        # Можно сохранить выбранный тип в self.settings
+    
+    def load_example(self, example_num):
+        # Здесь можно реализовать загрузку примеров
+        if example_num == 1:
+            self.costs = [[4, 8, 8], [16, 24, 16], [8, 16, 24]]
+            self.supply = [76, 82, 77]
+            self.demand = [72, 102, 41]
+            self.settings["size_y"] = len(self.supply)
+            self.settings["size_x"] = len(self.demand)
+            self.write_data_into_input_table()
+            self.show_input_page()
+        elif example_num == 2:
+            self.costs = [[7, 8, 1, 2], [4, 5, 9, 8], [9, 2, 3, 6]]
+            self.supply = [160, 140, 170]
+            self.demand = [120, 50, 190, 110]   
+            self.settings["size_y"] = len(self.supply)
+            self.settings["size_x"] = len(self.demand)
+            self.write_data_into_input_table()
+            self.show_input_page()
+        elif example_num == 3:
+            self.costs = [
+                [11, 13, 17, 14],
+                [16, 18, 14, 10],
+                [21, 24, 13, 10],
+            ]
+            self.supply = [250, 300, 400]
+            self.demand = [200, 225, 275, 250]
+            self.settings["size_y"] = len(self.supply)
+            self.settings["size_x"] = len(self.demand)
+            self.write_data_into_input_table()
+            self.show_input_page()
+        elif example_num == 4:
+            self.multi_costs = [
+                [[595, 780], [480, 665], [455, 640], [430, 815]],
+                [[435, 735], [530, 735], [480, 680], [485, 585]],
+                [[545, 715], [465, 755], [525, 815], [440, 795]]
+            ]
+            self.multi_supply = [[21, 21], [33, 42], [17, 57]]
+            self.multi_demand = [[15, 20], [22, 26], [12, 22], [32, 42]]
+            self.settings["size_y"] = len(self.multi_supply)
+            self.settings["size_x"] = len(self.multi_demand)
+            self.write_data_into_double_table()
+            self.show_multiproduct_table()
+
+        self.source_spin.setValue(len(self.supply))
+        self.dest_spin.setValue(len(self.demand))
+        #self.write_data_into_input_table()
+        #self.show_input_page()
+        self.show_status_message(f"Загружен пример {example_num}")
 
     def create_combined_input_table(self):
         layout = QVBoxLayout()
@@ -220,6 +545,9 @@ class TransportationSolver(QMainWindow):
         self.stacked_widget.setCurrentIndex(0)
         self.solve_btn.setVisible(True)
         self.back_btn.setVisible(False)
+        self.settings["current"] = "standard"
+        #self.multiproduct_btn.setVisible(True)
+        self.examples_btn.setVisible(True)
         #self.text_input_btn.setVisible(True)
     
     def show_solution_page(self):
@@ -227,11 +555,13 @@ class TransportationSolver(QMainWindow):
         self.stacked_widget.setCurrentIndex(1)
         self.solve_btn.setVisible(False)
         self.back_btn.setVisible(True)
+        #self.multiproduct_btn.setVisible(False)
+        self.examples_btn.setVisible(False)
         #self.text_input_btn.setVisible(False)
     
     def create_solution_page(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setContentsMargins(0, 0, 0, 0)
         
         solution_group = QGroupBox("Оптимальное распределение")
         solution_layout = QVBoxLayout()
@@ -393,30 +723,30 @@ class TransportationSolver(QMainWindow):
     def show_status_message(self, message):
         self.status_label.setText(message)
     
-    def get_data_from_input_table(self):
-        rows = self.combined_table.rowCount()
-        cols = self.combined_table.columnCount()
+    # def get_data_from_input_table(self):
+    #     rows = self.combined_table.rowCount()
+    #     cols = self.combined_table.columnCount()
         
-        if rows < 2 or cols < 2:
-            raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
+    #     if rows < 2 or cols < 2:
+    #         raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
         
-        self.supply = []
-        for row in range(1, rows):
-            item = self.combined_table.item(row, 0)
-            self.supply.append(int(item.text()) if item and item.text().isdigit() else 0)
+    #     self.supply = []
+    #     for row in range(1, rows):
+    #         item = self.combined_table.item(row, 0)
+    #         self.supply.append(int(item.text()) if item and item.text().isdigit() else 0)
         
-        self.demand = []
-        for col in range(1, cols):
-            item = self.combined_table.item(0, col)
-            self.demand.append(int(item.text()) if item and item.text().isdigit() else 0)
+    #     self.demand = []
+    #     for col in range(1, cols):
+    #         item = self.combined_table.item(0, col)
+    #         self.demand.append(int(item.text()) if item and item.text().isdigit() else 0)
         
-        self.costs = []
-        for row in range(1, rows):
-            cost_row = []
-            for col in range(1, cols):
-                item = self.combined_table.item(row, col)
-                cost_row.append(int(item.text()) if item and item.text().isdigit() else 0)
-            self.costs.append(cost_row)
+    #     self.costs = []
+    #     for row in range(1, rows):
+    #         cost_row = []
+    #         for col in range(1, cols):
+    #             item = self.combined_table.item(row, col)
+    #             cost_row.append(int(item.text()) if item and item.text().isdigit() else 0)
+    #         self.costs.append(cost_row)
     
     def write_data_into_input_table(self):
         sources = self.settings["size_y"]
@@ -515,6 +845,21 @@ class TransportationSolver(QMainWindow):
         self.get_data_from_input_table()
         self.update_table_size()
         self.write_data_into_input_table()
+
+    def solve(self):
+        if self.settings["current"] == "multi":
+            self.solve_multi()
+        else:
+            self.solve_problem()
+    
+    def solve_multi(self):
+        self.get_data_from_double_table()
+        
+        problem = Solver(self.multi_supply, self.multi_demand, self.multi_costs)
+        result_matrix, self.total_cost = problem.solve_transportation_scipy_double()
+
+        print(result_matrix)
+        print(self.total_cost)
     
     def solve_problem(self):
         # try:
@@ -522,35 +867,37 @@ class TransportationSolver(QMainWindow):
         # except Exception as e:
         #     QMessageBox.critical(self, "Ошибка", f"Не удалось решить задачу:\n{str(e)}")
         #     self.show_status_message(f"Ошибка: {str(e)}")
-
         self.get_data_from_input_table()
         costs, supply, demand = self.costs, self.supply, self.demand
         
-        print(supply, demand, costs)
         problem = Solver(supply, demand, costs)
         result_matrix, self.total_cost = problem.solve_transportation_scipy()
 
         sources = len(result_matrix)
         destinations = len(result_matrix[0]) if sources > 0 else 0
 
-        
-
-        print(self.demand_labels)
         to_write = [[""] + self.demand_labels[0:self.settings["size_x"]]]
-        #if 
-        print(result_matrix)
+        # print(result_matrix)
+        # print(destinations, len(self.demand_labels))
+        if destinations > self.settings["size_x"]:
+            to_write[0].append("Фиктивный потребитель")
+
         for i in range(0, self.settings["size_y"]):
-            print(i)
             this = [self.supply_labels[i]] + result_matrix[i].tolist()
             to_write.append(this)
+    
+        if sources > self.settings["size_y"]:
+            to_write.append(["Фиктивный поставщик"] + result_matrix[-1].tolist())
         
         self.solution_table.setRowCount(len(to_write))
         self.solution_table.setColumnCount(len(to_write[0]))
 
         for y in range(len(to_write)):
             for x in range(len(to_write[0])):
-                print(y, x)
-                item = QTableWidgetItem(str(to_write[y][x]))
+                val = to_write[y][x]
+                if isinstance(val, float):
+                    val = "{0:g}".format(val)
+                item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
         

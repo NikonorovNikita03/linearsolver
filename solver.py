@@ -93,8 +93,7 @@ class Solver(object):
         bounds = [(0, None) for _ in range(num_vars)]
 
         result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
-        print(result.x.reshape((n_sources, n_destinations, n_products)))
-        #X = res.x.reshape((m, n))
+        return result.x.reshape((n_sources, n_destinations, n_products)), result.fun
 
 
     def solve_transportation_scipy(self):

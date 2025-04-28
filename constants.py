@@ -4,7 +4,20 @@ solve_btn = """
                 color: white; 
                 padding: 8px;
                 margin-top: 18px;
-                width: 50px;
+                width: 60px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """
+
+multiproduct_btn_ss = """
+            QPushButton {
+                background-color: #4CAF50; 
+                color: white; 
+                padding: 8px;
+                margin-top: 18px;
+                width: 60px;
             }
             QPushButton:hover {
                 background-color: #45a049;
@@ -17,7 +30,7 @@ back_btn_ss = """
                 color: white; 
                 padding: 8px;
                 margin-top: 18px;
-                width: 50px;
+                width: 60px;
             }
             QPushButton:hover {
                 background-color: #485e69;
@@ -36,7 +49,18 @@ text_input_btn = """
             }
         """
 
-
+examples_btn_ss = """
+            QPushButton {
+                background-color: #4CAF50; 
+                color: white; 
+                padding: 8px;
+                margin-top: 18px;
+                width: 60px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """
 # total_cost_label = """
 #             QLabel {
 #                 font-size: 16px;
@@ -73,7 +97,8 @@ colors = {
     "blue": (230, 240, 255),
     "pink": (255, 230, 230),
     "lime": (230, 255, 230),
-    "green": (200, 255, 200)
+    "green": (200, 255, 200),
+    "black": (0, 0, 0)
 }
 
 solution_table_ss = """
