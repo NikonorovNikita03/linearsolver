@@ -384,13 +384,13 @@ class TransportationSolver(QMainWindow):
         examples_layout.setAlignment(Qt.AlignTop)
         examples_layout.setSpacing(10)
         
-        example1_btn = self.q_push_button("Пример 1 (3x3)", "background-color: #607D8B; color: white; padding: 8px;", 
+        example1_btn = self.q_push_button("Пример ТЗ 1", "background-color: #607D8B; color: white; padding: 8px;", 
                                         lambda: self.load_example(1))
-        example2_btn = self.q_push_button("Пример 2 (3x3)", "background-color: #607D8B; color: white; padding: 8px;", 
+        example2_btn = self.q_push_button("Пример ТЗ 2", "background-color: #607D8B; color: white; padding: 8px;", 
                                         lambda: self.load_example(2))
-        example3_btn = self.q_push_button("Пример 3 (3x3)", "background-color: #607D8B; color: white; padding: 8px;", 
+        example3_btn = self.q_push_button("Пример ТЗ 3", "background-color: #607D8B; color: white; padding: 8px;", 
                                         lambda: self.load_example(3))
-        example4_btn = self.q_push_button("Пример 4 (4x4)", "background-color: #9C27B0; color: white; padding: 8px;", 
+        example4_btn = self.q_push_button("Пример МТЗ", "background-color: #9C27B0; color: white; padding: 8px;", 
                                         lambda: self.load_example(4))
         
         examples_layout.addWidget(example1_btn)
@@ -864,23 +864,25 @@ class TransportationSolver(QMainWindow):
         self.get_data_from_double_table()
         
         problem = Solver(self.multi_supply, self.multi_demand, self.multi_costs)
-        result_matrix, self.total_cost = problem.solve_transportation_scipy_double()
+        result_matrix, self.total_cost , info = problem.solve_transportation_scipy_double()
+
+        #print(info)
 
         size_y = 2 + 2 * len(result_matrix)
         size_x = 2 + 2 * len(result_matrix[0])
 
-        self.solution_table.setRowCount(size_y)
-        self.solution_table.setColumnCount(size_x)
+        self.solution_table.setRowCount(size_y - 1)
+        self.solution_table.setColumnCount(size_x - 1)
 
-        for i in range(2, size_x - 1, 2):
+        for i in range(2, size_x - 2, 2):
             self.solution_table.setSpan(0, i, 1, 2)
 
-        for i in range(2, size_y - 1, 2):
+        for i in range(2, size_y - 2, 2):
             self.solution_table.setSpan(i, 0, 2, 1)
         
         to_write = [["" for i in range(size_x)]]
 
-        to_write.append(["", ""])
+        to_write.append(["", "'"])
         for i in range(self.settings["size_x"]):
             to_write[1] += self.product_names
         to_write[1] += [""]
@@ -907,21 +909,42 @@ class TransportationSolver(QMainWindow):
         # to_write[-1][1] = ""
         # to_write[-1][-1] = ""
 
+        multi_demand = self.demand_labels[:-1]
         if len(to_write[1]) < size_x:
-            to_write[1].insert(-1, 'Фиктивный')
+            multi_demand.append('Фиктивный потребитель')
 
+        multi_supply = self.supply_labels[:-1]
         if len(to_write) < size_y:
-            to_write.insert(-1, ['Фиктивный'] + ['0' for x in range(size_x - 1)])
+            multi_supply.append('Фиктивный поставщик')
 
         supply_counter = 0
         demand_counter = 0
-        print('My list:', *to_write, sep='\n- ')
-        for y in range(size_y):
-            for x in range(size_x):
-                item = QTableWidgetItem(str(to_write[y][x]))
-                if size_x - 1 > x > 1 and size_y - 1 > y > 1 and ((x % 2 == 0 and y % 2 == 1) or (x % 2 == 1 and y % 2 == 0)):
+        # print('My list:', *to_write, sep='\n- ')
+        # print(size_y, size_x)
+        # print(self.supply_labels) 
+        # print(self.demand_labels)
+
+        to_write[-1][1] = ""
+        
+        for y in range(size_y - 1):
+            for x in range(size_x - 1):
+                val = to_write[y][x]
+                if isinstance(val, float):
+                    val = "{0:g}".format(val)
+
+                if y == 0 and x > 1 and x % 2 == 0:
+                    val = multi_demand[demand_counter]
+                    demand_counter += 1
+                
+                if x == 0 and y > 1 and y % 2 == 0:
+                    val = multi_supply[supply_counter]
+                    supply_counter += 1
+
+                item = QTableWidgetItem(val)
+                if size_x - 2 > x > 1 and size_y - 2 > y > 1 and ((x % 2 == 0 and y % 2 == 1) or (x % 2 == 1 and y % 2 == 0)):
                     item.setBackground(self.brushes["black"])
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
 
@@ -1061,6 +1084,10 @@ class TransportationSolver(QMainWindow):
         
         self.solution_table.setRowCount(len(to_write))
         self.solution_table.setColumnCount(len(to_write[0]))
+
+        # for i in range(len(to_write)):
+        #     for j in range(len(to_write[0])):
+        #         self.solution_table.setSpan(i, j, 1, 1)
 
         for y in range(len(to_write)):
             for x in range(len(to_write[0])):

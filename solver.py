@@ -34,22 +34,34 @@ class Solver(object):
         n_destinations = len(demand)  # количество потребителей (включая фиктивного)
         n_products = len(supply[0])  # количество продуктов
 
+        info = {
+            "balanced": True
+        }
+
         for n in range(n_products):
             supply_n = sum([supply[x][n] for x in range(n_sources)])
             demand_n = sum([demand[x][n] for x in range(n_destinations)])
 
             if supply_n > demand_n:
+                info["balanced"] = False
+                if not "balanced_demand_items" in info:
+                    info["balanced_demand_items"] = {}
                 for i in range(len(costs)):
                     costs[i].append([0 for i in range(n_products)])
                 new_demand = [0 for i in range(n_products)]
                 new_demand[n] = supply_n - demand_n
+                info["balanced_demand_items"][f"Продукт {n+1}"] = supply_n - demand_n
                 demand.append(new_demand)
                 n_destinations += 1
 
             if supply_n < demand_n:
+                info["balanced"] = False
+                if not "balanced_supply_items" in info:
+                    info["balanced_supply_items"] = {}
                 costs.append([[0 for i in range(n_products)] for j in range(n_destinations)])
                 new_supply = np.zeros(n_products)
                 new_supply[n] = demand_n - supply_n
+                info["balanced_supply_items"][f"Продукт {n+1}"] = demand_n - supply_n
                 supply.append(new_supply)
                 n_sources += 1
 
@@ -93,7 +105,7 @@ class Solver(object):
         bounds = [(0, None) for _ in range(num_vars)]
 
         result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
-        return result.x.reshape((n_sources, n_destinations, n_products)), result.fun
+        return result.x.reshape((n_sources, n_destinations, n_products)), result.fun, info
 
 
     def solve_transportation_scipy(self):
