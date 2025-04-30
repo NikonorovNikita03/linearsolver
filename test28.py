@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QIcon, QColor, QBrush
 from solver import Solver
+from TransportationProblem import TransportationProblem
 import constants
 import functions
 
@@ -17,14 +18,13 @@ class TransportationSolver(QMainWindow):
         super().__init__()
         self.setWindowTitle("Решение транспортных задач линейного программирования")
         self.settings = functions.get_settings()
-        self.settings["current"] = "standard"
+        self.page = "main"
+        self.problem_type = ""
         self.setGeometry(100, 100, self.settings["width"], self.settings["height"])
 
+        self.transportation_problem = TransportationProblem(3, 3, self.q_push_button)
+
         self.product_names = ["Продукт 1", "Продукт 2"]
-        self.costs = [[0 for x in range(self.settings["size_x"])] for y in range(self.settings["size_y"])]
-        self.supply = [0 for y in range(self.settings["size_y"])]
-        self.demand = [0 for x in range(self.settings["size_x"])]
-        self.total_cost = 0
 
         self.multi_costs = []
         for y in range(self.settings["size_y"]):
@@ -41,48 +41,67 @@ class TransportationSolver(QMainWindow):
         self.brushes = {}
         for color in constants.colors.items():
             self.brushes[color[0]] = QBrush(QColor(*color[1]))
-
-        self.central_widget = QWidget() 
-        self.setCentralWidget(self.central_widget)
         
-        self.main_layout = QVBoxLayout()
-        self.central_widget.setLayout(self.main_layout)
+        # self.main_layout = QVBoxLayout()
+        # self.central_widget.setLayout(self.main_layout)
         
-        self.status_label = QLabel()
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet("padding: 3px; background: #f0f0f0; border-top: 1px solid #ccc;")
-
         self.icon = QIcon()
         self.icon.addFile('images/calculator.svg')
         self.setWindowIcon(self.icon)
-        
-        self.control_group = QGroupBox("Настройка задачи")
-        self.create_controls()
-        
+
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
         self.stacked_widget = QStackedWidget()
-        
+
+        self.main_layout = QVBoxLayout()
+        self.central_widget.setLayout(self.main_layout)
+
+        self.main_page = QWidget()
+        self.create_main_page()
+
         self.input_page = QWidget()
-        self.create_combined_input_table()
-        
-        self.solution_page = QWidget()
-        self.create_solution_page()
+        self.create_input_page()
 
-        self.multiproduct_page = QWidget()
-        self.create_multiproduct_page()
-
-        self.examples_page = QWidget()
-        self.create_examples_page() 
-        
+        self.stacked_widget.addWidget(self.main_page)
         self.stacked_widget.addWidget(self.input_page)
-        self.stacked_widget.addWidget(self.solution_page)
-        self.stacked_widget.addWidget(self.multiproduct_page)
-        self.stacked_widget.addWidget(self.examples_page)
-        
-        self.main_layout.addWidget(self.stacked_widget)
-        self.main_layout.addWidget(self.status_label)
 
-        self.update_table_size()
-        self.write_data_into_input_table()
+        self.main_layout.addWidget(self.stacked_widget)
+
+        # self.central_widget = QWidget() 
+        # self.setCentralWidget(self.central_widget)
+
+        # self.status_label = QLabel()
+        # self.status_label.setAlignment(Qt.AlignCenter)
+        # self.status_label.setStyleSheet("padding: 3px; background: #f0f0f0; border-top: 1px solid #ccc;")
+        
+        # self.control_group = QGroupBox("Настройка задачи")
+        # self.create_controls()
+        
+        # self.stacked_widget = QStackedWidget()
+        
+        # self.input_page = QWidget()
+        # self.create_combined_input_table()
+        
+        # self.solution_page = QWidget()
+        # self.create_solution_page()
+
+        # self.multiproduct_page = QWidget()
+        # self.create_multiproduct_page()
+
+        # self.examples_page = QWidget()
+        # self.create_examples_page() 
+        
+        # self.stacked_widget.addWidget(self.input_page)
+        # self.stacked_widget.addWidget(self.solution_page)
+        # self.stacked_widget.addWidget(self.multiproduct_page)
+        # self.stacked_widget.addWidget(self.examples_page)
+        
+        # self.main_layout.addWidget(self.stacked_widget)
+        # self.main_layout.addWidget(self.status_label)
+
+        # self.update_table_size()
+        # self.write_data_into_input_table()
     
     def create_multiproduct_page(self):
         layout = QVBoxLayout()
@@ -256,58 +275,61 @@ class TransportationSolver(QMainWindow):
         self.back_btn.setVisible(False)
         self.settings["current"] = "multi"
     
-    def q_push_button(self, name, style, function, cursor=True):
+    def q_push_button(self, name, style, function=None, cursor=True):
         btn = QPushButton(name)
         btn.setStyleSheet(style)
-        btn.clicked.connect(function)
+        if function:
+            btn.clicked.connect(function)
         if cursor:
             btn.setCursor(Qt.PointingHandCursor)
         return btn
     
     def create_controls(self):
+        self.control_group = QWidget()
+        
         control_layout = QHBoxLayout()
         control_layout.setContentsMargins(5, 5, 5, 5)
         control_layout.setSpacing(10)
         
-        self.source_layout = QVBoxLayout()
-        self.source_layout.setSpacing(0)
-        self.source_layout.addWidget(QLabel("Поставщики:"))
-        self.source_spin = QSpinBox()
-        self.source_spin.setRange(1, 10)
-        self.source_spin.setValue(self.settings["size_y"])
-        self.source_spin.valueChanged.connect(self.update_input_table)
-        self.source_layout.addWidget(self.source_spin)
+        # self.source_layout = QVBoxLayout()
+        # self.source_layout.setSpacing(0)
+        # self.source_layout.addWidget(QLabel("Поставщики:"))
+        # self.source_spin = QSpinBox()
+        # self.source_spin.setRange(1, 10)
+        # self.source_spin.setValue(self.settings["size_y"])
+        # self.source_spin.valueChanged.connect(self.update_input_table)
+        # self.source_layout.addWidget(self.source_spin)
         
-        self.dest_layout = QVBoxLayout()
-        self.dest_layout.setSpacing(0)
-        self.dest_layout.addWidget(QLabel("Потребители:"))
-        self.dest_spin = QSpinBox()
-        self.dest_spin.setRange(1, 10)
-        self.dest_spin.setValue(self.settings["size_x"])
-        self.dest_spin.valueChanged.connect(self.update_input_table)
-        self.dest_layout.addWidget(self.dest_spin)
+        # self.dest_layout = QVBoxLayout()
+        # self.dest_layout.setSpacing(0)
+        # self.dest_layout.addWidget(QLabel("Потребители:"))
+        # self.dest_spin = QSpinBox()
+        # self.dest_spin.setRange(1, 10)
+        # self.dest_spin.setValue(self.settings["size_x"])
+        # self.dest_spin.valueChanged.connect(self.update_input_table)
+        # self.dest_layout.addWidget(self.dest_spin)
         
-        #self.text_input_btn = self.q_push_button("Ввести текстом", constants.text_input_btn, self.show_text_input_page)
-        self.solve_btn = self.q_push_button("Решить", constants.solve_btn, self.solve)
-        #self.multiproduct_btn = self.q_push_button("Мультипродуктовая задача", constants.multiproduct_btn_ss, self.show_multiproduct_table)
-        self.examples_btn = self.q_push_button("Примеры", constants.examples_btn_ss, self.show_examples_page)
+        # #self.text_input_btn = self.q_push_button("Ввести текстом", constants.text_input_btn, self.show_text_input_page)
+        # self.solve_btn = self.q_push_button("Решить", constants.solve_btn, self.solve)
+        # #self.multiproduct_btn = self.q_push_button("Мультипродуктовая задача", constants.multiproduct_btn_ss, self.show_multiproduct_table)
+        # self.examples_btn = self.q_push_button("Примеры", constants.examples_btn_ss, self.show_main_page)
         
-        self.back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
-        self.back_btn.setVisible(False)
+        # self.back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
+        # self.back_btn.setVisible(False)
         
-        control_layout.addLayout(self.source_layout)
-        control_layout.addLayout(self.dest_layout)
-        control_layout.addStretch()
-        #control_layout.addWidget(self.text_input_btn)
-        control_layout.addWidget(self.back_btn)
-        control_layout.addWidget(self.examples_btn)
-        control_layout.addWidget(self.solve_btn)
-        #control_layout.addWidget(self.multiproduct_btn)
+        # control_layout.addLayout(self.source_layout)
+        # control_layout.addLayout(self.dest_layout)
+        # control_layout.addStretch()
+        # #control_layout.addWidget(self.text_input_btn)
+        # control_layout.addWidget(self.back_btn)
+        # control_layout.addWidget(self.examples_btn)
+        # control_layout.addWidget(self.solve_btn)
+        # #control_layout.addWidget(self.multiproduct_btn)
         
         self.control_group.setLayout(control_layout)
         self.main_layout.addWidget(self.control_group)
 
-    def create_examples_page(self):
+    def create_main_page(self):
         main_layout = QHBoxLayout()
 
         top_layout = QHBoxLayout()
@@ -370,12 +392,11 @@ class TransportationSolver(QMainWindow):
         main_layout.addLayout(bottom_layout)
         main_layout.addLayout(top_layout)
         
-        
-        self.examples_page.setLayout(main_layout)
+        self.main_page.setLayout(main_layout)
 
-    def show_examples_page(self):
-        self.control_group.setVisible(False)
-        self.stacked_widget.setCurrentWidget(self.examples_page)
+    def show_main_page(self):
+        #self.control_group.setVisible(False)
+        self.stacked_widget.setCurrentWidget(self.main_page)
         self.solve_btn.setVisible(False)
         self.back_btn.setVisible(False)
         self.examples_btn.setVisible(False)
@@ -406,30 +427,26 @@ class TransportationSolver(QMainWindow):
         self.source_spin.setValue(problem["data"]["size_y"])
         self.dest_spin.setValue(problem["data"]["size_x"])
 
-    def create_combined_input_table(self):
+    def create_input_page(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+
+        group_top = QGroupBox("Настройка задачи")
+        match self.problem_type:
+            case _:
+                group_top_layout = self.transportation_problem.get_top_layout()
+        group_top.setLayout(group_top_layout)
         
         group = QGroupBox("Ввод данных задачи")
         group_layout = QVBoxLayout()
         
-        self.combined_table = QTableWidget()
-        self.combined_table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        self.input_table = QTableWidget()
+        self.input_table.setStyleSheet("QTableWidget { font-size: 12px; }")
         
-        btn_layout = QHBoxLayout()
-        copy_btn = self.q_push_button("Копировать", "background-color: #2196F3; color: white;", 
-                                    lambda: self.copy_table_data(self.combined_table))
-        paste_btn = self.q_push_button("Вставить", "background-color: #FF9800; color: white;", 
-                                    lambda: self.paste_data_to_table(self.combined_table))
-        
-        btn_layout.addStretch()
-        btn_layout.addWidget(copy_btn)
-        btn_layout.addWidget(paste_btn)
-        
-        group_layout.addWidget(self.combined_table)
-        group_layout.addLayout(btn_layout)
+        group_layout.addWidget(self.input_table)
         group.setLayout(group_layout)
         
+        layout.addWidget(group_top)
         layout.addWidget(group)
         self.input_page.setLayout(layout)
 
@@ -460,12 +477,14 @@ class TransportationSolver(QMainWindow):
                     item.setBackground(self.brushes["green"])
     
     def show_input_page(self):        
-        self.control_group.setVisible(True)
-        self.stacked_widget.setCurrentIndex(0)
-        self.solve_btn.setVisible(True)
-        self.back_btn.setVisible(False)
-        self.settings["current"] = "standard"
-        self.examples_btn.setVisible(True)
+#        self.control_group.setVisible(True)
+        #self.stacked_widget.setCurrentIndex(0)
+        self.stacked_widget.setCurrentWidget(self.input_page)
+        self.page = "input"
+        # self.solve_btn.setVisible(True)
+        # self.back_btn.setVisible(False)
+        # self.settings["current"] = "standard"
+        # self.examples_btn.setVisible(True)
     
     def show_solution_page(self):
         self.control_group.setVisible(True)

@@ -22,13 +22,6 @@ class TransportationSolver(QMainWindow):
         self.settings["current"] = "standard"
         self.setGeometry(100, 100, self.settings["width"], self.settings["height"])
 
-        # self.costs = [
-        #     [4, 8, 8],
-        #     [16, 24, 16],
-        #     [8, 16, 24]
-        # ]
-        # self.supply = [76, 82, 77]
-        # self.demand = [72, 102, 41]
         self.product_names = ["Продукт 1", "Продукт 2"]
         self.costs = [[0 for x in range(self.settings["size_x"])] for y in range(self.settings["size_y"])]
         self.supply = [0 for y in range(self.settings["size_y"])]
