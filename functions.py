@@ -1,3 +1,6 @@
+from PySide6.QtWidgets import QPushButton
+from PySide6.QtCore import Qt
+
 def get_settings():
     with open("settings.txt") as f:
         settings = f.read()
@@ -49,3 +52,12 @@ def str_to_number(s):
         return int(f) if f.is_integer() else f
     except:
         return 0
+    
+def q_push_button(name, style, function = None, cursor=True):
+    btn = QPushButton(name)
+    btn.setStyleSheet(style)
+    if function:
+        btn.clicked.connect(function)
+    if cursor:
+        btn.setCursor(Qt.PointingHandCursor)
+    return btn
