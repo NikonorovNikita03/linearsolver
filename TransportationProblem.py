@@ -10,6 +10,7 @@ from solver import Solver
 class TransportationProblem():
     def __init__(self, size_x, size_y):
         self.table = QTableWidget()
+        self.solution_table = QTableWidget()
         self.table.setStyleSheet("QTableWidget { font-size: 12px; }")
         self.control_layout = QHBoxLayout()
         self.size_x = size_x
@@ -20,6 +21,20 @@ class TransportationProblem():
         self.total_cost = 0
         self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
         self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
+
+        self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        #self.solution_table.setStyleSheet(constants.solution_table_ss)
+        
+        s_header = self.solution_table.horizontalHeader()
+        s_header.setSectionResizeMode(QHeaderView.Stretch)
+        s_header.setDefaultAlignment(Qt.AlignCenter)
+        s_header.setStyleSheet(constants.solution_page_h_header_ss)
+        
+        s_v_header = self.solution_table.verticalHeader()
+        s_v_header.setSectionResizeMode(QHeaderView.Stretch)
+        s_v_header.setDefaultAlignment(Qt.AlignCenter)
+        s_v_header.setStyleSheet(constants.solution_page_v_header_ss)
 
         self.set_top_layout()
         self.update_table_size()
@@ -168,42 +183,53 @@ class TransportationProblem():
         self.update_table_size()
         self.write_data_into_input_table()
 
-    # def solve(self):
-    #     self.get_data_from_input_table()
-    #     costs, supply, demand = self.costs, self.supply, self.demand
+    def solve(self):
+        self.get_data_from_input_table()
+        costs, supply, demand = self.costs, self.supply, self.demand
         
-    #     problem = Solver(supply, demand, costs)
-    #     result_matrix, self.total_cost = problem.solve_transportation_scipy()
+        problem = Solver(supply, demand, costs)
+        result_matrix, self.total_cost = problem.solve_transportation_scipy()
 
-    #     sources = len(result_matrix)
-    #     destinations = len(result_matrix[0]) if sources > 0 else 0
+        sources = len(result_matrix)
+        destinations = len(result_matrix[0]) if sources > 0 else 0
 
-    #     to_write = [[""] + self.demand_labels[0:self.settings["size_x"]]]
+        to_write = [[""] + self.demand_labels[0:self.size_x]]
 
-    #     if destinations > self.settings["size_x"]:
-    #         to_write[0].append("Фиктивный потребитель")
+        if destinations > self.size_x:
+            to_write[0].append("Фиктивный потребитель")
 
-    #     for i in range(0, self.settings["size_y"]):
-    #         this = [self.supply_labels[i]] + result_matrix[i].tolist()
-    #         to_write.append(this)
+        for i in range(0, self.size_y):
+            this = [self.supply_labels[i]] + result_matrix[i].tolist()
+            to_write.append(this)
     
-    #     if sources > self.settings["size_y"]:
-    #         to_write.append(["Фиктивный поставщик"] + result_matrix[-1].tolist())
+        if sources > self.size_y:
+            to_write.append(["Фиктивный поставщик"] + result_matrix[-1].tolist())
         
-    #     self.solution_table.setRowCount(len(to_write))
-    #     self.solution_table.setColumnCount(len(to_write[0]))
+        self.solution_table.setRowCount(len(to_write) + 1)
+        self.solution_table.setColumnCount(len(to_write[0]))
 
-    #     for y in range(len(to_write)):
-    #         for x in range(len(to_write[0])):
-    #             val = to_write[y][x]
-    #             if isinstance(val, float):
-    #                 val = "{0:g}".format(val)
-    #             item = QTableWidgetItem(val)
-    #             item.setTextAlignment(Qt.AlignCenter)
-    #             self.solution_table.setItem(y, x, item)
+        for i in range(len(to_write[0])):
+            self.solution_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
         
-    #     self.total_cost_label.setText(f"Общая стоимость: {constants.stringify(self.total_cost)}")
-    #     self.highlight_solution_table()
+        for i in range(len(to_write)):
+            self.solution_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+
+        for y in range(len(to_write)):
+            for x in range(len(to_write[0])):
+                val = to_write[y][x]
+                if isinstance(val, float):
+                    val = "{0:g}".format(val)
+                item = QTableWidgetItem(val)
+                item.setTextAlignment(Qt.AlignCenter)
+                self.solution_table.setItem(y, x, item)
+        
+        self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
+        item = QTableWidgetItem(f"Общая стоимость: {constants.stringify(self.total_cost)}")
+        item.setTextAlignment(Qt.AlignCenter)
+        self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))
+        
+        #self.total_cost_label.setText(f"Общая стоимость: {constants.stringify(self.total_cost)}")
+        #self.highlight_solution_table()
         
     #     self.show_solution_page()
     #     self.show_status_message("Задача решена!")
