@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QIcon, QColor, QBrush
 from solver import Solver
 from TransportationProblem import TransportationProblem
+from MultiobjectiveTransportationProblem import MultiobjectiveTransportationProblem
 import constants
 import functions
 from functools import partial
@@ -230,12 +231,12 @@ class TransportationSolver(QMainWindow):
         for i in range(self.multiproduct_table.rowCount()):
             self.multiproduct_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
-    def show_multiproduct_table(self):
-        self.control_group.setVisible(True)
-        self.stacked_widget.setCurrentWidget(self.multiproduct_page)
-        self.examples_btn.setVisible(True)
-        self.back_btn.setVisible(False)
-        self.settings["current"] = "multi"
+    # def show_multiproduct_table(self):
+    #     self.control_group.setVisible(True)
+    #     self.stacked_widget.setCurrentWidget(self.multiproduct_page)
+    #     self.examples_btn.setVisible(True)
+    #     self.back_btn.setVisible(False)
+    #     self.settings["current"] = "multi"
 
     def create_main_page(self):
         main_layout = QHBoxLayout()
@@ -254,11 +255,11 @@ class TransportationSolver(QMainWindow):
         task_type_layout.setSpacing(10)
         
         transport_btn = functions.q_push_button("Транспортная задача", "background-color: #4CAF50; color: white; padding: 8px;", 
-                                         self.show_input_page)
+                                         self.show_transportation_table)
         # assignment_btn = functions.q_push_button("Задача назначения", "background-color: #2196F3; color: white; padding: 8px;", 
         #                                   lambda: self.set_task_type("assignment"))
         multiproduct_btn = functions.q_push_button("Мультипродуктовая задача", "background-color: #FF9800; color: white; padding: 8px;", 
-                                            self.show_multiproduct_table)
+                                            self.show_multiobject_transportation_table)
         
         task_type_layout.addWidget(transport_btn)
         # task_type_layout.addWidget(assignment_btn)
@@ -289,6 +290,15 @@ class TransportationSolver(QMainWindow):
         
         self.main_page.setLayout(main_layout)
 
+    def show_transportation_table(self):
+        self.problem_type = "Транспортная задача"
+        self.show_input_page()
+    
+    def show_multiobject_transportation_table(self):
+        self.problem_type = "Многопродуктовая транспортная задача"
+        self.show_input_page()
+
+
     def show_main_page(self):
         self.stacked_widget.setCurrentWidget(self.main_page)
         self.page = "main"
@@ -302,6 +312,7 @@ class TransportationSolver(QMainWindow):
                 self.transportation_problem.costs = problem["data"]["costs"]
                 self.transportation_problem.supply = problem["data"]["supply"]
                 self.transportation_problem.demand = problem["data"]["demand"]
+                self.input_table.setCurrentWidget(self.transportation_problem.table)
                 self.transportation_problem.write_data_into_input_table()
                 self.show_input_page()
             case "Многопродуктовая транспортная задача":
@@ -310,8 +321,9 @@ class TransportationSolver(QMainWindow):
                 self.multi_demand = problem["data"]["demand"]
                 self.settings["size_y"] = problem["data"]["size_y"]
                 self.settings["size_x"] = problem["data"]["size_x"]
-                self.write_data_into_double_table()
-                self.show_multiproduct_table()
+                self.input_table.setCurrentWidget(self.multiobject_transportation_problem.table)
+                self.multiobject_transportation_problem.write_data_into_input_table()
+                self.show_input_page()
             case _:
                 pass
 
@@ -325,9 +337,14 @@ class TransportationSolver(QMainWindow):
         self.transportation_problem = TransportationProblem(3, 3)
         self.group_top.setLayout(self.transportation_problem.control_layout)
         self.input_table.addWidget(self.transportation_problem.table)
-        
         self.transportation_problem.menu_btn.clicked.connect(self.show_main_page)
         self.transportation_problem.solve_btn.clicked.connect(self.solve)        
+
+        self.multiobject_transportation_problem = MultiobjectiveTransportationProblem(3, 3)
+        self.group_top.setLayout(self.multiobject_transportation_problem.control_layout)
+        self.input_table.addWidget(self.multiobject_transportation_problem.table)
+        self.multiobject_transportation_problem.menu_btn.clicked.connect(self.show_main_page)
+        self.multiobject_transportation_problem.solve_btn.clicked.connect(self.solve)        
         
         group = QGroupBox("Ввод данных задачи")
         group_layout = QVBoxLayout()
