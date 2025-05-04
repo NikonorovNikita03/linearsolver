@@ -35,10 +35,6 @@ class TransportationSolver(QMainWindow):
 
         self.multi_supply = [[0, 0] for x in range(self.settings["size_y"])]
         self.multi_demand = [[0, 0] for x in range(self.settings["size_x"])]
-
-        self.brushes = {}
-        for color in constants.colors.items():
-            self.brushes[color[0]] = QBrush(QColor(*color[1]))
         
         self.icon = QIcon()
         self.icon.addFile('images/calculator.svg')
@@ -307,21 +303,21 @@ class TransportationSolver(QMainWindow):
         problem = constants.examples[id]
         match problem["type"]:
             case "Транспортная задача":
+                self.problem_type = "Транспортная задача"
                 self.transportation_problem.source_spin.setValue(problem["data"]["size_y"])
                 self.transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
                 self.transportation_problem.costs = problem["data"]["costs"]
                 self.transportation_problem.supply = problem["data"]["supply"]
-                self.transportation_problem.demand = problem["data"]["demand"]
-                self.input_table.setCurrentWidget(self.transportation_problem.table)
+                self.transportation_problem.demand = problem["data"]["demand"]                
                 self.transportation_problem.write_data_into_input_table()
                 self.show_input_page()
             case "Многопродуктовая транспортная задача":
-                self.multi_costs = problem["data"]["costs"]
-                self.multi_supply = problem["data"]["supply"]
-                self.multi_demand = problem["data"]["demand"]
-                self.settings["size_y"] = problem["data"]["size_y"]
-                self.settings["size_x"] = problem["data"]["size_x"]
-                self.input_table.setCurrentWidget(self.multiobject_transportation_problem.table)
+                self.problem_type = "Многопродуктовая транспортная задача"
+                self.multiobject_transportation_problem.source_spin.setValue(problem["data"]["size_y"])
+                self.multiobject_transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.multiobject_transportation_problem.costs = problem["data"]["costs"]
+                self.multiobject_transportation_problem.supply = problem["data"]["supply"]
+                self.multiobject_transportation_problem.demand = problem["data"]["demand"]                
                 self.multiobject_transportation_problem.write_data_into_input_table()
                 self.show_input_page()
             case _:
@@ -331,17 +327,20 @@ class TransportationSolver(QMainWindow):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.group_top = QGroupBox("Настройка задачи")
+        #self.group_top = QGroupBox("Настройка задачи")
+        self.group_top = QStackedWidget()
         self.input_table = QStackedWidget()
 
         self.transportation_problem = TransportationProblem(3, 3)
-        self.group_top.setLayout(self.transportation_problem.control_layout)
+        # self.group_top.setLayout(self.transportation_problem.control_layout)
+        self.group_top.addWidget(self.transportation_problem.group_top)
         self.input_table.addWidget(self.transportation_problem.table)
         self.transportation_problem.menu_btn.clicked.connect(self.show_main_page)
         self.transportation_problem.solve_btn.clicked.connect(self.solve)        
 
         self.multiobject_transportation_problem = MultiobjectiveTransportationProblem(3, 3)
-        self.group_top.setLayout(self.multiobject_transportation_problem.control_layout)
+        # self.group_top.setLayout(self.multiobject_transportation_problem.control_layout)
+        self.group_top.addWidget(self.multiobject_transportation_problem.group_top)
         self.input_table.addWidget(self.multiobject_transportation_problem.table)
         self.multiobject_transportation_problem.menu_btn.clicked.connect(self.show_main_page)
         self.multiobject_transportation_problem.solve_btn.clicked.connect(self.solve)        
@@ -353,36 +352,43 @@ class TransportationSolver(QMainWindow):
         group.setLayout(group_layout)
         
         layout.addWidget(self.group_top)
-        layout.addWidget(group)
+        layout.addWidget(group, stretch=1)
         self.input_page.setLayout(layout)
 
-    # def highlight_table_regions(self):
-    #     for row in range(self.combined_table.rowCount()):
-    #         for col in range(self.combined_table.columnCount()):
-    #             item = self.combined_table.item(row, col)
-    #             if item:
-    #                 item.setBackground(self.brushes["white"])
+    def highlight_table_regions(self):
+        for row in range(self.combined_table.rowCount()):
+            for col in range(self.combined_table.columnCount()):
+                item = self.combined_table.item(row, col)
+                if item:
+                    item.setBackground(self.brushes["white"])
         
-    #     sources = self.source_spin.value()
-    #     destinations = self.dest_spin.value()
+        sources = self.source_spin.value()
+        destinations = self.dest_spin.value()
         
-    #     for row in range(1, sources + 1):
-    #         item = self.combined_table.item(row, destinations + 1)
-    #         if item:
-    #             item.setBackground(self.brushes["blue"])
+        for row in range(1, sources + 1):
+            item = self.combined_table.item(row, destinations + 1)
+            if item:
+                item.setBackground(self.brushes["blue"])
         
-    #     for col in range(1, destinations + 1):
-    #         item = self.combined_table.item(sources + 1, col)
-    #         if item:
-    #             item.setBackground(self.brushes["pink"])
+        for col in range(1, destinations + 1):
+            item = self.combined_table.item(sources + 1, col)
+            if item:
+                item.setBackground(self.brushes["pink"])
         
-    #     for row in range(1, sources + 1):
-    #         for col in range(1, destinations + 1):
-    #             item = self.combined_table.item(row, col)
-    #             if item:
-    #                 item.setBackground(self.brushes["green"])
+        for row in range(1, sources + 1):
+            for col in range(1, destinations + 1):
+                item = self.combined_table.item(row, col)
+                if item:
+                    item.setBackground(self.brushes["green"])
     
     def show_input_page(self):        
+        match self.problem_type:
+            case "Многопродуктовая транспортная задача":
+                self.group_top.setCurrentWidget(self.multiobject_transportation_problem.group_top)
+                self.input_table.setCurrentWidget(self.multiobject_transportation_problem.table)
+            case _:
+                self.group_top.setCurrentWidget(self.transportation_problem.group_top)
+                self.input_table.setCurrentWidget(self.transportation_problem.table)
         self.stacked_widget.setCurrentWidget(self.input_page)
         self.page = "input"
     
@@ -394,17 +400,13 @@ class TransportationSolver(QMainWindow):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        #self.solution_top = QGroupBox("Вээй")
-        
         solution_group = QGroupBox("Оптимальное распределение")
-        solution_layout = QVBoxLayout()
-        #solution_layout.setContentsMargins(5, 5, 5, 5)
-        
+        solution_layout = QVBoxLayout()        
 
         self.solution_table = QStackedWidget()
         self.solution_table.addWidget(self.transportation_problem.solution_table)
 
-        self.btn_gbox = QGroupBox("Вээй")
+        self.btn_gbox = QGroupBox()
         
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(5, 25, 5, 5)
@@ -427,29 +429,12 @@ class TransportationSolver(QMainWindow):
             constants.export_csv_btn_ss, 
             self.show_input_page
         )
-
-        # dummy_layout = QVBoxLayout()
-        # dummy_layout.setSpacing(0)
-        # dummy_layout.addWidget(QLabel("Йоу"))
-        # dummy_spin = QSpinBox()
-        # dummy_layout.addWidget(dummy_spin)
-
-        # dummy_widget = QWidget()
-        # dummy_widget.setLayout(dummy_layout)
-        # dummy_widget.setGraphicsEffect(QGraphicsOpacityEffect())
-        # dummy_widget.setOpacity(0.0)
-
-        # effect = QGraphicsOpacityEffect()
-        # effect.setOpacity(0.0)
-        # dummy_spin.setGraphicsEffect(effect)
         
         btn_layout.addWidget(solution_copy_btn)
         btn_layout.addWidget(self.export_csv_btn)
         btn_layout.addStretch()
         btn_layout.addWidget(back_btn)
-        # btn_layout.addWidget(dummy_widget)
-        
-        # solution_layout.addLayout(btn_layout)
+
         solution_layout.addWidget(self.solution_table)
 
         self.btn_gbox.setLayout(btn_layout)

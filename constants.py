@@ -92,15 +92,6 @@ title_label = """
 
 stringify = lambda i: f'{i}' if i % 1 else f'{i:.0f}'
 
-colors = {
-    "white": (255, 255, 255),
-    "blue": (230, 240, 255),
-    "pink": (255, 230, 230),
-    "lime": (230, 255, 230),
-    "green": (200, 255, 200),
-    "black": (0, 0, 0)
-}
-
 solution_table_ss = """
 QTableWidget {
                 font-size: 12px;

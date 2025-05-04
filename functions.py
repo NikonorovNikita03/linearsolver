@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QBrush
 
 def get_settings():
     with open("settings.txt") as f:
@@ -61,3 +62,15 @@ def q_push_button(name, style, function = None, cursor=True):
     if cursor:
         btn.setCursor(Qt.PointingHandCursor)
     return btn
+
+colors = {
+    "white": (255, 255, 255),
+    "blue": (230, 240, 255),
+    "pink": (255, 230, 230),
+    "lime": (230, 255, 230),
+    "green": (200, 255, 200),
+    "black": (0, 0, 0)
+}
+brushes = {}
+for color in colors:
+    brushes[color] = QBrush(QColor(*color[1]))

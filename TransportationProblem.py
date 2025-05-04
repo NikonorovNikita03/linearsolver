@@ -12,6 +12,7 @@ class TransportationProblem():
         self.table = QTableWidget()
         self.solution_table = QTableWidget()
         self.table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        self.group_top = QGroupBox()
         self.control_layout = QHBoxLayout()
         self.size_x = size_x
         self.size_y = size_y
@@ -79,6 +80,8 @@ class TransportationProblem():
         self.control_layout.addWidget(self.menu_btn)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
+
+        self.group_top.setLayout(self.control_layout)
         #control_layout.addWidget(self.text_input_btn)
         # control_layout.addWidget(self.back_btn)
         # control_layout.addWidget(self.examples_btn)

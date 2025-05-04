@@ -5,18 +5,28 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
+from functions import brushes
 from solver import Solver
 class MultiobjectiveTransportationProblem():
     def __init__(self, size_x, size_y):
         self.table = QTableWidget()
         self.solution_table = QTableWidget()
         self.table.setStyleSheet("QTableWidget { font-size: 12px; }")
+        self.group_top = QGroupBox()
         self.control_layout = QHBoxLayout()
         self.size_x = size_x
         self.size_y = size_y
-        self.costs = [[0 for x in range(self.size_x)] for y in range(self.size_y)]
-        self.supply = [0 for y in range(self.size_y)]
-        self.demand = [0 for x in range(self.size_x)]
+        # self.costs = [[0 for x in range(self.size_x)] for y in range(self.size_y)]
+        # self.supply = [0 for y in range(self.size_y)]
+        # self.demand = [0 for x in range(self.size_x)]
+        self.costs = []
+        for y in range(self.size_y):
+            self.costs.append([])
+            for x in range(self.size_x):
+                self.costs[y].append([0, 0])
+
+        self.supply = [[0, 0] for x in range(self.size_y)]
+        self.demand = [[0, 0] for x in range(self.size_x)]
         self.total_cost = 0
         self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
         self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
@@ -78,6 +88,8 @@ class MultiobjectiveTransportationProblem():
         self.control_layout.addWidget(self.menu_btn)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
+
+        self.group_top.setLayout(self.control_layout)
         #control_layout.addWidget(self.text_input_btn)
         # control_layout.addWidget(self.back_btn)
         # control_layout.addWidget(self.examples_btn)
@@ -91,47 +103,122 @@ class MultiobjectiveTransportationProblem():
         self.size_x = destinations
         self.size_y = sources
         
-        self.table.setRowCount(sources + 2)
-        self.table.setColumnCount(destinations + 2)
+        size_y = 3 + 2 * self.size_y
+        size_x = 3 + 2 * self.size_x
+        product_number = 2
+
+        self.table.setRowCount(size_y)
+        self.table.setColumnCount(size_x)
+        # self.table.setRowCount(sources + 2)
+        # self.table.setColumnCount(destinations + 2)
 
         if len(self.supply_labels) <= sources:
             for i in range(len(self.supply_labels), sources + 1):
                 self.supply_labels.insert(i - 1, "Поставщик " + str(i))
-                self.supply.append(0)
-                self.costs.append([0 for x in range(len(self.costs[0]))])
+                self.supply.append([0, 0])
+                self.costs.append([[0, 0] for x in range(len(self.costs[0]))])
 
         if len(self.demand_labels) <= destinations:
             for j in range(len(self.demand_labels), destinations + 1):
                 self.demand_labels.insert(j - 1, "Потребитель " + str(j))
-                self.demand.append(0)    
+                self.demand.append([0, 0])    
                 for k in range(len(self.costs)):
-                    self.costs[k].append(0)
+                    self.costs[k].append([0, 0])
         
-        for i in range(destinations + 2):
+        for i in range(size_x):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
         
-        for i in range(sources + 2):
+        for i in range(size_y):
             self.table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
     
     def write_data_into_input_table(self):
-        sources = self.size_y
-        destinations = self.size_x
-        self.table.setRowCount(sources + 2)
-        self.table.setColumnCount(destinations + 2)
+        # sources = self.size_y
+        # destinations = self.size_x
+        # self.table.setRowCount(sources + 2)
+        # self.table.setColumnCount(destinations + 2)
 
-        to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
-        for i in range(0, sources):
-            this = [self.supply_labels[i]] + self.costs[i][0:destinations] + [self.supply[i]]
-            to_write.append(this)
-        to_write.append([self.demand_labels[-1]] + self.demand + [""])
+        # to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
+        # for i in range(0, sources):
+        #     this = [self.supply_labels[i]] + self.costs[i][0:destinations] + [self.supply[i]]
+        #     to_write.append(this)
+        # to_write.append([self.demand_labels[-1]] + self.demand + [""])
 
-        for y in range(sources + 2):
-            for x in range(destinations + 2):
-                item = QTableWidgetItem(str(to_write[y][x]))
-                item.setTextAlignment(Qt.AlignCenter)
-                self.table.setItem(y, x, item)
+        # for y in range(sources + 2):
+        #     for x in range(destinations + 2):
+        #         item = QTableWidgetItem(str(to_write[y][x]))
+        #         item.setTextAlignment(Qt.AlignCenter)
+        #         self.table.setItem(y, x, item)
         
         #self.highlight_table_regions()
+        size_y = 3 + 2 * self.size_y
+        size_x = 3 + 2 * self.size_x
+        product_number = 2
+
+        self.product_names = ["A", "B"]
+
+        for i in range(product_number, size_x - 1, product_number):
+            self.table.setSpan(0, i, 1, product_number)
+
+        for i in range(product_number, size_y - 1, product_number):
+            self.table.setSpan(i, 0, product_number, 1)
+        
+        to_write = [["" for i in range(size_x)]]
+
+        to_write.append(["", ""])
+        for i in range(self.size_x):
+            to_write[1] += self.product_names
+        to_write[1] += [""]
+ 
+        for i in range(self.size_y):
+            to_write.append(["" for x in range(size_x)])
+            to_write.append(["" for x in range(size_x)])
+            for j in range(len(self.costs[0])):
+                to_write[2 * i + 2][2 + 2 * j] = self.costs[i][j][0]
+                to_write[2 * i + 3][3 + 2 * j] = self.costs[i][j][1]
+
+            to_write[2 * i + 2][1] = self.product_names[0]
+            to_write[2 * i + 3][1] = self.product_names[1]
+
+            to_write[2 * i + 2][-1] = self.supply[i][0]
+            to_write[2 * i + 3][-1] = self.supply[i][1]
+
+        to_write.append(["0" for x in range(size_x)])
+        
+        for i in range(self.size_x):
+            to_write[-1][2 * i + 2] = self.demand[i][0]
+            to_write[-1][2 * i + 3] = self.demand[i][1]
+        
+        to_write[-1][1] = ""
+        to_write[-1][-1] = ""
+
+        supply_counter = 0
+        demand_counter = 0
+        for y in range(size_y):
+            for x in range(size_x):
+                item = QTableWidgetItem(str(to_write[y][x]))
+                if x == 0:
+                    if y < 2 or y % product_number != 0:
+                        continue
+                    else:
+                        item = QTableWidgetItem(self.supply_labels[supply_counter])
+                        supply_counter += 1
+                if y == 0:
+                    if x < 2 or x % product_number != 0:
+                        continue
+                    else:
+                        item = QTableWidgetItem(self.demand_labels[demand_counter])
+                        demand_counter += 1
+                if size_x - 1 > x > 1 and size_y - 1 > y > 1 and ((x % 2 == 0 and y % 2 == 1) or (x % 2 == 1 and y % 2 == 0)):
+                    item.setBackground(brushes["black"])
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(y, x, item)
+    
+        # for i in range(self.table.columnCount()):
+        #     self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+        
+        # for i in range(self.table.rowCount()):
+        #     self.table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
     def get_data_from_input_table(self):
         rows = self.table.rowCount()
@@ -178,7 +265,7 @@ class MultiobjectiveTransportationProblem():
         self.demand_labels = combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
 
     def update_input_table(self):
-        self.get_data_from_input_table()
+        #self.get_data_from_input_table()
         self.update_table_size()
         self.write_data_into_input_table()
 
