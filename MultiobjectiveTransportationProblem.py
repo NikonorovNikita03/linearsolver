@@ -105,7 +105,6 @@ class MultiobjectiveTransportationProblem():
         
         size_y = 3 + 2 * self.size_y
         size_x = 3 + 2 * self.size_x
-        product_number = 2
 
         self.table.setRowCount(size_y)
         self.table.setColumnCount(size_x)
@@ -168,7 +167,7 @@ class MultiobjectiveTransportationProblem():
         for i in range(self.size_x):
             to_write[1] += self.product_names
         to_write[1] += [""]
- 
+
         for i in range(self.size_y):
             to_write.append(["" for x in range(size_x)])
             to_write.append(["" for x in range(size_x)])
@@ -224,98 +223,149 @@ class MultiobjectiveTransportationProblem():
         rows = self.table.rowCount()
         cols = self.table.columnCount()
         
-        if rows < 3 or cols < 3:  # Минимум 1 поставщик, 1 потребитель + заголовки
-            raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
-        
-        sources = rows - 2
-        destinations = cols - 2
+        # if rows < 3 or cols < 3:  # Минимум 1 поставщик, 1 потребитель + заголовки
+        #     raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
 
-        new_demand_labels = []
-        for col in range(1, destinations + 2):
-            item = self.table.item(0, col)
-            new_demand_labels.append(item.text())
+        # new_demand_labels = []
+        # for col in range(1, destinations + 2):
+        #     item = self.combined_table.item(0, col)
+        #     new_demand_labels.append(item.text())
         
-        new_supply_labels = []
-        for row in range(1, sources + 2):
-            item = self.table.item(row, 0)
-            new_supply_labels.append(item.text())
+        # new_supply_labels = []
+        # for row in range(1, sources + 2):
+        #     item = self.combined_table.item(row, 0)
+        #     new_supply_labels.append(item.text())
             
         new_supply = []
-        for row in range(1, sources + 1):
-            item = self.table.item(row, destinations + 1)
-            new_supply.append(int(item.text()) if item and item.text().isdigit() else 0)
+        for row in range(self.size_y):
+            item = [
+                self.table.item(2 + row * 2, cols - 1),
+                self.table.item(3 + row * 2, cols - 1)
+            ]
+            new_supply.append([
+                int(item[0].text()) if item[0].text().isdigit() else 0,
+                int(item[1].text()) if item[1].text().isdigit() else 0,
+            ])
+
         
         new_demand = []
-        for col in range(1, destinations + 1):
-            item = self.table.item(sources + 1, col)
-            new_demand.append(int(item.text()) if item and item.text().isdigit() else 0)
+        for col in range(self.size_x):
+            item = [
+                self.table.item(rows - 1, 2 + col * 2),
+                self.table.item(rows - 1, 3 + col * 2),
+            ]
+            new_demand.append([
+                int(item[0].text()) if item[0].text().isdigit() else 0,
+                int(item[1].text()) if item[1].text().isdigit() else 0,
+            ])
         
         new_costs = []
-        for row in range(1, sources + 1):
+        for row in range(self.size_y):
             cost_row = []
-            for col in range(1, destinations + 1):
-                item = self.table.item(row, col)
-                cost_row.append(int(item.text()) if item and item.text().isdigit() else 0)
+            for col in range(self.size_x):
+                item = [
+                    self.table.item(2 + row * 2, 2 + col * 2),
+                    self.table.item(3 + row * 2, 3 + col * 2),
+                ]
+                cost_row.append([
+                    int(item[0].text()) if item[0].text().isdigit() else 0,
+                    int(item[1].text()) if item[1].text().isdigit() else 0,
+                ])
             new_costs.append(cost_row)
+
 
         self.supply = combine_arrays_1d_pure(new_supply, self.supply)
         self.demand = combine_arrays_1d_pure(new_demand, self.demand)
         self.costs = combine_arrays_pure(new_costs, self.costs)
-        self.supply_labels = combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
-        self.demand_labels = combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
+        # self.supply_labels = functions.combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
+        # self.demand_labels = functions.combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
 
     def update_input_table(self):
-        #self.get_data_from_input_table()
+        self.get_data_from_input_table()
         self.update_table_size()
         self.write_data_into_input_table()
 
     def solve(self):
         self.get_data_from_input_table()
-        costs, supply, demand = self.costs, self.supply, self.demand
         
-        problem = Solver(supply, demand, costs)
-        result_matrix, self.total_cost = problem.solve_transportation_scipy()
+        problem = Solver(self.supply, self.demand, self.costs)
+        result_matrix, self.total_cost, info = problem.solve_transportation_scipy_double()
 
-        sources = len(result_matrix)
-        destinations = len(result_matrix[0]) if sources > 0 else 0
+        #print(info)
 
-        to_write = [[""] + self.demand_labels[0:self.size_x]]
+        size_y = 2 + 2 * len(result_matrix)
+        size_x = 2 + 2 * len(result_matrix[0])
 
-        if destinations > self.size_x:
-            to_write[0].append("Фиктивный потребитель")
+        self.solution_table.setRowCount(size_y)
+        self.solution_table.setColumnCount(size_x - 1)
 
-        for i in range(0, self.size_y):
-            this = [self.supply_labels[i]] + result_matrix[i].tolist()
-            to_write.append(this)
-    
-        if sources > self.size_y:
-            to_write.append(["Фиктивный поставщик"] + result_matrix[-1].tolist())
+        for i in range(2, size_x - 2, 2):
+            self.solution_table.setSpan(0, i, 1, 2)
+
+        for i in range(2, size_y - 2, 2):
+            self.solution_table.setSpan(i, 0, 2, 1)
         
-        self.solution_table.setRowCount(len(to_write) + 1)
-        self.solution_table.setColumnCount(len(to_write[0]))
+        to_write = [["" for i in range(size_x)]]
 
-        for i in range(len(to_write[0])):
-            self.solution_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+        to_write.append(["", "'"])
+        for i in range(self.size_x):
+            to_write[1] += self.product_names
+        to_write[1] += [""]
+
+        for i in range(self.size_y):
+            to_write.append(["0" for x in range(size_x)])
+            to_write.append(["0" for x in range(size_x)])
+            for j in range(len(result_matrix[0])):
+                to_write[2 * i + 2][2 + 2 * j] = result_matrix[i][j][0]
+                to_write[2 * i + 3][3 + 2 * j] = result_matrix[i][j][1]
+
+            to_write[2 * i + 2][1] = self.product_names[0]
+            to_write[2 * i + 3][1] = self.product_names[1]
+
+        to_write.append(["0" for x in range(size_x)])
+
+        multi_demand = self.demand_labels[:-1]
+        if len(to_write[1]) < size_x:
+            multi_demand.append('Фиктивный потребитель')
+
+        multi_supply = self.supply_labels[:-1]
+        if len(to_write) < size_y:
+            multi_supply.append('Фиктивный поставщик')
+
+        supply_counter = 0
+        demand_counter = 0
+
+        to_write[-1][1] = ""
         
-        for i in range(len(to_write)):
-            self.solution_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
-
-        for y in range(len(to_write)):
-            for x in range(len(to_write[0])):
+        for y in range(size_y - 1):
+            for x in range(size_x - 1):
                 val = to_write[y][x]
                 if isinstance(val, float):
                     val = "{0:g}".format(val)
+
+                if y == 0 and x > 1 and x % 2 == 0:
+                    val = multi_demand[demand_counter]
+                    demand_counter += 1
+                
+                if x == 0 and y > 1 and y % 2 == 0:
+                    val = multi_supply[supply_counter]
+                    supply_counter += 1
+
                 item = QTableWidgetItem(val)
+                if size_x - 2 > x > 1 and size_y - 2 > y > 1 and ((x % 2 == 0 and y % 2 == 1) or (x % 2 == 1 and y % 2 == 0)):
+                    item.setBackground(brushes["black"])
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
-        
+
         self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
         item = QTableWidgetItem(f"Общая стоимость: {constants.stringify(self.total_cost)}")
         item.setTextAlignment(Qt.AlignCenter)
         self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))
         
-        #self.total_cost_label.setText(f"Общая стоимость: {constants.stringify(self.total_cost)}")
-        #self.highlight_solution_table()
-        
-    #     self.show_solution_page()
-    #     self.show_status_message("Задача решена!")
+
+
+        # self.total_cost_label.setText(f"Общая стоимость: {constants.stringify(self.total_cost)}")
+
+        # self.show_solution_page()

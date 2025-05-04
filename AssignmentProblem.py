@@ -1,41 +1,41 @@
 import constants
+import numpy as np
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QSpinBox, QVBoxLayout, QLabel,
     QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox
 )
 from PySide6.QtCore import Qt
 from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
-from solver import Solver
+from scipy.optimize import linear_sum_assignment
 
-class TransportationProblem():
+class AssignmentProblem():
     def __init__(self, size_x, size_y):
         self.table = QTableWidget()
         self.solution_table = QTableWidget()
         self.table.setStyleSheet("QTableWidget { font-size: 12px; }")
         self.group_top = QGroupBox()
         self.control_layout = QHBoxLayout()
+
         self.size_x = size_x
         self.size_y = size_y
         self.costs = [[0 for x in range(self.size_x)] for y in range(self.size_y)]
-        self.supply = [0 for y in range(self.size_y)]
-        self.demand = [0 for x in range(self.size_x)]
         self.total_cost = 0
-        self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
-        self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
+        self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)]
+        self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)]
 
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
-        #self.solution_table.setStyleSheet(constants.solution_table_ss)
+        self.solution_table.setStyleSheet(constants.solution_table_ss)
         
         s_header = self.solution_table.horizontalHeader()
         s_header.setSectionResizeMode(QHeaderView.Stretch)
         s_header.setDefaultAlignment(Qt.AlignCenter)
-        s_header.setStyleSheet(constants.solution_page_h_header_ss)
+        #s_header.setStyleSheet(constants.solution_page_h_header_ss)
         
         s_v_header = self.solution_table.verticalHeader()
         s_v_header.setSectionResizeMode(QHeaderView.Stretch)
         s_v_header.setDefaultAlignment(Qt.AlignCenter)
-        s_v_header.setStyleSheet(constants.solution_page_v_header_ss)
+        #s_v_header.setStyleSheet(constants.solution_page_v_header_ss)
 
         self.set_top_layout()
         self.update_table_size()
@@ -95,42 +95,39 @@ class TransportationProblem():
         self.size_x = destinations
         self.size_y = sources
         
-        self.table.setRowCount(sources + 2)
-        self.table.setColumnCount(destinations + 2)
+        self.table.setRowCount(sources + 1)
+        self.table.setColumnCount(destinations + 1)
 
-        if len(self.supply_labels) <= sources:
-            for i in range(len(self.supply_labels), sources + 1):
+        if len(self.supply_labels) < sources:
+            for i in range(len(self.supply_labels) + 1, sources + 1):
                 self.supply_labels.insert(i - 1, "Поставщик " + str(i))
-                self.supply.append(0)
                 self.costs.append([0 for x in range(len(self.costs[0]))])
-
-        if len(self.demand_labels) <= destinations:
-            for j in range(len(self.demand_labels), destinations + 1):
+        
+        if len(self.demand_labels) < destinations:
+            for j in range(len(self.demand_labels) + 1, destinations + 1):
                 self.demand_labels.insert(j - 1, "Потребитель " + str(j))
-                self.demand.append(0)    
                 for k in range(len(self.costs)):
                     self.costs[k].append(0)
         
-        for i in range(destinations + 2):
+        for i in range(destinations + 1):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
         
-        for i in range(sources + 2):
+        for i in range(sources + 1):
             self.table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
     
     def write_data_into_input_table(self):
         sources = self.size_y
         destinations = self.size_x
-        self.table.setRowCount(sources + 2)
-        self.table.setColumnCount(destinations + 2)
+        self.table.setRowCount(sources + 1)
+        self.table.setColumnCount(destinations + 1)
 
         to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
         for i in range(0, sources):
-            this = [self.supply_labels[i]] + self.costs[i][0:destinations] + [self.supply[i]]
+            this = [self.supply_labels[i]] + self.costs[i][0:destinations]
             to_write.append(this)
-        to_write.append([self.demand_labels[-1]] + self.demand + [""])
 
-        for y in range(sources + 2):
-            for x in range(destinations + 2):
+        for y in range(sources + 1):
+            for x in range(destinations + 1):
                 item = QTableWidgetItem(str(to_write[y][x]))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(y, x, item)
@@ -148,24 +145,14 @@ class TransportationProblem():
         destinations = cols - 2
 
         new_demand_labels = []
-        for col in range(1, destinations + 2):
+        for col in range(1, destinations + 1):
             item = self.table.item(0, col)
             new_demand_labels.append(item.text())
         
         new_supply_labels = []
-        for row in range(1, sources + 2):
+        for row in range(1, sources + 1):
             item = self.table.item(row, 0)
             new_supply_labels.append(item.text())
-            
-        new_supply = []
-        for row in range(1, sources + 1):
-            item = self.table.item(row, destinations + 1)
-            new_supply.append(int(item.text()) if item and item.text().isdigit() else 0)
-        
-        new_demand = []
-        for col in range(1, destinations + 1):
-            item = self.table.item(sources + 1, col)
-            new_demand.append(int(item.text()) if item and item.text().isdigit() else 0)
         
         new_costs = []
         for row in range(1, sources + 1):
@@ -175,8 +162,6 @@ class TransportationProblem():
                 cost_row.append(int(item.text()) if item and item.text().isdigit() else 0)
             new_costs.append(cost_row)
 
-        self.supply = combine_arrays_1d_pure(new_supply, self.supply)
-        self.demand = combine_arrays_1d_pure(new_demand, self.demand)
         self.costs = combine_arrays_pure(new_costs, self.costs)
         self.supply_labels = combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
         self.demand_labels = combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
@@ -187,27 +172,25 @@ class TransportationProblem():
         self.write_data_into_input_table()
 
     def solve(self):
-        self.get_data_from_input_table()
-        costs, supply, demand = self.costs, self.supply, self.demand
-        
-        problem = Solver(supply, demand, costs)
-        result_matrix, self.total_cost = problem.solve_transportation_scipy()
-
-        sources = len(result_matrix)
-        destinations = len(result_matrix[0]) if sources > 0 else 0
-
-        to_write = [[""] + self.demand_labels[0:self.size_x]]
-
-        if destinations > self.size_x:
-            to_write[0].append("Фиктивный потребитель")
-
-        for i in range(0, self.size_y):
-            this = [self.supply_labels[i]] + result_matrix[i].tolist()
-            to_write.append(this)
+        cost_matrix = np.array(self.costs)
     
-        if sources > self.size_y:
-            to_write.append(["Фиктивный поставщик"] + result_matrix[-1].tolist())
-        
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    
+        assignments = list(zip(row_ind, col_ind))
+    
+        self.total_cost = cost_matrix[row_ind, col_ind].sum()
+
+        result_matrix = [(int(x), int(y)) for (x, y) in assignments]
+
+        if self.size_x == self.size_y:
+            to_write = [[""] + self.demand_labels]
+            for y in range(self.size_y):
+                to_write.append([self.supply_labels[y]] + [0 for x in range(self.size_x)])
+            for r in result_matrix:
+                to_write[r[0] + 1][r[1] + 1] = 1
+        else:
+            pass
+
         self.solution_table.setRowCount(len(to_write) + 1)
         self.solution_table.setColumnCount(len(to_write[0]))
 
@@ -222,10 +205,12 @@ class TransportationProblem():
                 val = to_write[y][x]
                 if isinstance(val, float):
                     val = "{0:g}".format(val)
+                if isinstance(val, int):
+                    val = str(val)
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
-        
+
         self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
         item = QTableWidgetItem(f"Общая стоимость: {constants.stringify(self.total_cost)}")
         item.setTextAlignment(Qt.AlignCenter)

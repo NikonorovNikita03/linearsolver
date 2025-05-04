@@ -166,8 +166,6 @@ class Solver(object):
         total_cost = np.sum(X * C)
         return X, total_cost
 
-
-
     def solve_transportation_scipy_time_(self, time_vector, speed_matrix):
         a, b, _, C = self.__surplus()
         m, n = C.shape
@@ -195,7 +193,6 @@ class Solver(object):
         X = res.x.reshape((m, n))
         total_cost = np.sum(X * C)
         return X, total_cost
-
 
     def solve_transportation_scipy_standard(self):
         a, b, _, C = self.__surplus()
