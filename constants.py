@@ -61,28 +61,6 @@ examples_btn_ss = """
                 background-color: #45a049;
             }
         """
-# total_cost_label = """
-#             QLabel {
-#                 font-size: 16px;
-#                 font-weight: bold;
-#                 padding: 10px;
-#                 background: #f5f5f5;
-#                 border: 1px solid #ddd;
-#                 border-radius: 5px;
-#             }
-#         """
-
-
-text_edit_placeholder = """Введите данные задачи здесь в формате:
-Стоимости:
-4 8 8
-16 24 16
-8 16 24
-Запасы:
-76 82 77
-Потребности:
-72 102 41
-"""
 
 title_label = """
             font-size: 16px;

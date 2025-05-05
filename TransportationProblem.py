@@ -63,17 +63,8 @@ class TransportationProblem():
         self.dest_spin.valueChanged.connect(self.update_input_table)
         self.dest_layout.addWidget(self.dest_spin)
         
-        #self.text_input_btn = self.q_push_button("Ввести текстом", constants.text_input_btn, self.show_text_input_page)
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
-        
-        #self.solve
-        #self.multiproduct_btn = self.q_push_button("Мультипродуктовая задача", constants.multiproduct_btn_ss, self.show_multiproduct_table)
-        #self.examples_btn = self.q_push_button("Примеры", constants.examples_btn_ss, self.show_examples_page)
-        
-        #self.back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
-        #self.back_btn.setVisible(False)
-        
 
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
@@ -82,11 +73,6 @@ class TransportationProblem():
         self.control_layout.addWidget(self.solve_btn)
 
         self.group_top.setLayout(self.control_layout)
-        #control_layout.addWidget(self.text_input_btn)
-        # control_layout.addWidget(self.back_btn)
-        # control_layout.addWidget(self.examples_btn)
-        
-        #control_layout.addWidget(self.multiproduct_btn)
 
     def update_table_size(self):  
         sources = self.source_spin.value()
@@ -141,7 +127,7 @@ class TransportationProblem():
         rows = self.table.rowCount()
         cols = self.table.columnCount()
         
-        if rows < 3 or cols < 3:  # Минимум 1 поставщик, 1 потребитель + заголовки
+        if rows < 3 or cols < 3: 
             raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
         
         sources = rows - 2
