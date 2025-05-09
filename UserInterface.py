@@ -21,7 +21,7 @@ class UserInterface(QMainWindow):
         self.setGeometry(100, 100, 1366, 768)
         
         self.icon = QIcon()
-        self.icon.addFile('images/calculator.svg')
+        self.icon.addFile(functions.resource_path('images/calculator.svg'))
         self.setWindowIcon(self.icon)
 
         self.central_widget = QWidget()
@@ -207,13 +207,13 @@ class UserInterface(QMainWindow):
         solution_copy_btn = functions.q_push_button(
             "Копировать решение", 
             constants.solution_copy_btn_ss, 
-            #lambda: self.copy_table_data(self.solution_table)
+            # lambda: self.copy_table_data(self.solution_table)
         )
         
         self.export_csv_btn = functions.q_push_button(
             "Выгрузить CSV", 
             constants.export_csv_btn_ss, 
-            #self.export_solution_to_csv
+            # self.export_solution_to_csv
         )
 
         back_btn = functions.q_push_button(

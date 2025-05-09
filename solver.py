@@ -199,8 +199,6 @@ class Solver(object):
         t_m_tmp = np.copy(np.zeros((s_v_tmp.size, d_v_tmp.size)))
         c_m_tmp = np.copy(self.cost_matrix)
 
-        infinity = np.inf
-
         if np.sum(s_v_tmp) > np.sum(d_v_tmp):
             d_v_tmp = np.append(d_v_tmp, np.sum(s_v_tmp) - np.sum(d_v_tmp))
             new_column_tmp = np.zeros((s_v_tmp.size, 1))
@@ -210,10 +208,8 @@ class Solver(object):
         elif np.sum(s_v_tmp) < np.sum(d_v_tmp):
             s_v_tmp = np.append(s_v_tmp, np.sum(d_v_tmp) - np.sum(s_v_tmp))
             new_row_t_tmp = np.zeros((1, d_v_tmp.size))
-            #new_row_c_tmp = np.full((1, d_v_tmp.size), infinity)
             t_m_tmp = np.append(t_m_tmp, new_row_t_tmp, axis=0)
             c_m_tmp = np.append(c_m_tmp, new_row_t_tmp, axis=0)
-            #c_m_tmp = np.append(c_m_tmp, new_row_c_tmp, axis=0)
             self.surplus = "demand"
         else:
             self.surplus = "equal"
