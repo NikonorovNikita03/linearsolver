@@ -1,3 +1,16 @@
+btn_green = """
+            QPushButton {
+                background-color: #4CAF50; 
+                color: white; 
+                padding: 8px;
+                margin-top: 18px;
+                width: 60px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """
+
 solve_btn = """
             QPushButton {
                 background-color: #4CAF50; 
