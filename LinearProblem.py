@@ -1,27 +1,28 @@
 import constants
 from PySide6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QSpinBox, QVBoxLayout, QLabel,
-    QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox
+    QHBoxLayout, QVBoxLayout, QSpinBox, QVBoxLayout, QLabel, QWidget,
+    QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox, QComboBox
 )
 from PySide6.QtCore import Qt
 from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
 from solver import Solver
 
-class TransportationProblem():
-    def __init__(self, size_x, size_y):
+class LinearProblem():
+    def __init__(self, size_x = 3, size_y = 3):
         self.table = QTableWidget()
         self.solution_table = QTableWidget()
         self.table.setStyleSheet("QTableWidget { font-size: 12px; }")
         self.group_top = QGroupBox()
         self.control_layout = QHBoxLayout()
+        self.variable_name = "x"
         self.size_x = size_x
         self.size_y = size_y
         self.costs = [[0 for x in range(self.size_x)] for y in range(self.size_y)]
-        self.supply = [0 for y in range(self.size_y)]
-        self.demand = [0 for x in range(self.size_x)]
+        self.function = [0 for y in range(self.size_y)]
+        self.constraints = [0 for x in range(self.size_x)]
         self.total_cost = 0
-        self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
-        self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
+        # self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
+        # self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
 
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
@@ -47,7 +48,7 @@ class TransportationProblem():
         
         self.source_layout = QVBoxLayout()
         self.source_layout.setSpacing(0)
-        self.source_layout.addWidget(QLabel("Поставщики:"))
+        self.source_layout.addWidget(QLabel("Количество<br>переменных:"))
         self.source_spin = QSpinBox()
         self.source_spin.setRange(1, 50)
         self.source_spin.setValue(self.size_y)
@@ -56,7 +57,7 @@ class TransportationProblem():
         
         self.dest_layout = QVBoxLayout()
         self.dest_layout.setSpacing(0)
-        self.dest_layout.addWidget(QLabel("Потребители:"))
+        self.dest_layout.addWidget(QLabel("Количество<br>ограничений:"))
         self.dest_spin = QSpinBox()
         self.dest_spin.setRange(1, 50)
         self.dest_spin.setValue(self.size_x)
@@ -84,18 +85,18 @@ class TransportationProblem():
         self.table.setRowCount(sources + 2)
         self.table.setColumnCount(destinations + 2)
 
-        if len(self.supply_labels) <= sources:
-            for i in range(len(self.supply_labels), sources + 1):
-                self.supply_labels.insert(i - 1, "Поставщик " + str(i))
-                self.supply.append(0)
-                self.costs.append([0 for x in range(len(self.costs[0]))])
+        # if len(self.supply_labels) <= sources:
+        #     for i in range(len(self.supply_labels), sources + 1):
+        #         self.supply_labels.insert(i - 1, "Поставщик " + str(i))
+        #         self.supply.append(0)
+        #         self.costs.append([0 for x in range(len(self.costs[0]))])
 
-        if len(self.demand_labels) <= destinations:
-            for j in range(len(self.demand_labels), destinations + 1):
-                self.demand_labels.insert(j - 1, "Потребитель " + str(j))
-                self.demand.append(0)    
-                for k in range(len(self.costs)):
-                    self.costs[k].append(0)
+        # if len(self.demand_labels) <= destinations:
+        #     for j in range(len(self.demand_labels), destinations + 1):
+        #         self.demand_labels.insert(j - 1, "Потребитель " + str(j))
+        #         self.demand.append(0)    
+        #         for k in range(len(self.costs)):
+        #             self.costs[k].append(0)
         
         for i in range(destinations + 2):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
@@ -109,19 +110,28 @@ class TransportationProblem():
         self.table.setRowCount(sources + 2)
         self.table.setColumnCount(destinations + 2)
 
-        to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
+        to_write = [[""] + [f"{self.variable_name}{i}" for i in range(1, self.size_x+1)] + [""]]
+        to_write.append([f"F ({self.variable_name}) = "] + ["" for i in range(self.size_x)] + [""])
         for i in range(0, sources):
-            this = [self.supply_labels[i]] + self.costs[i][0:destinations] + [self.supply[i]]
+            this = self.costs[i][0:self.size_x] + [["Список", [">=", "=", "<="]]] + [""]
             to_write.append(this)
-        to_write.append([self.supply_labels[-1]] + self.demand + [""])
 
         for y in range(sources + 2):
             for x in range(destinations + 2):
-                item = QTableWidgetItem(str(to_write[y][x]))
-                item.setTextAlignment(Qt.AlignCenter)
-                self.table.setItem(y, x, item)
-        
-        #self.highlight_table_regions()
+                if isinstance(to_write[y][x], list) and to_write[y][x][0] == "Список":    
+                    list_widget = QComboBox()
+                    list_widget.setStyleSheet("""
+                        QComboBox {
+                            font-size: 25px; 
+                        }
+                    """)
+                    
+                    list_widget.addItems(to_write[y][x][1])
+                    self.table.setCellWidget(y, x, list_widget)
+                else:
+                    item = QTableWidgetItem(str(to_write[y][x]))
+                    item.setTextAlignment(Qt.AlignCenter)
+                    self.table.setItem(y, x, item)
 
     def get_data_from_input_table(self):
         rows = self.table.rowCount()

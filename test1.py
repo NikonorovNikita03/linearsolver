@@ -8,25 +8,28 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Пример приложения с меню")
         self.setGeometry(100, 100, 800, 600)
+        # self.setContentsMargins(0, 0, 0, 0)
         
         # Установка иконки приложения
         self.setWindowIcon(QIcon("images/calculator.svg"))
         
         self.create_menu_bar()
 
-        self.menuBar().setStyleSheet("""
-            QMenuBar {
-                margin-left: 0px;
-                padding-left: 0px; /* Убираем отступ слева */
-            }
-        """)
+        # self.menuBar().setStyleSheet("""
+        #     QMenuBar {
+        #         margin-left: 0px;
+        #         padding-left: 0px; /* Убираем отступ слева */
+        #     }
+        # """)
         
     def create_menu_bar(self):
         # Создаем менюбар
         menubar = self.menuBar()
+        # menubar.setContentsMargins(0, 0, 0, 0)
         
         # 1. Меню "Файл" с подменю и действиями
         file_menu = menubar.addMenu("Файл")
+        # file_menu.setContentsMargins(0, 0, 0, 0)
         
         # Подменю "Создать"
         new_menu = QMenu("Создать", self)
@@ -122,9 +125,6 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    
-    # Установка стиля (опционально)
-    app.setStyle("Fusion")
     
     window = MainWindow()
     window.show()

@@ -2,10 +2,11 @@ import constants
 import functions
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QGroupBox, QSizePolicy, QStackedWidget
+    QGroupBox, QSizePolicy, QStackedWidget, QMenu, QFileDialog
 )
-from PySide6.QtCore import Qt, QMimeData
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QAction
+from LinearProblem import LinearProblem
 from TransportationProblem import TransportationProblem
 from MultiobjectiveTransportationProblem import MultiobjectiveTransportationProblem
 from AssignmentProblem import AssignmentProblem
@@ -23,6 +24,8 @@ class UserInterface(QMainWindow):
         self.icon = QIcon()
         self.icon.addFile(functions.resource_path('images/calculator.svg'))
         self.setWindowIcon(self.icon)
+
+        self.create_menu_bar()
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -47,6 +50,44 @@ class UserInterface(QMainWindow):
 
         self.main_layout.addWidget(self.stacked_widget)
 
+    def create_menu_bar(self):
+        self.menu_bar = self.menuBar()
+        
+        self.file_menu = self.menu_bar.addMenu("Файл")
+
+        new_menu = QMenu("Создать", self)
+        
+        action1 = QAction("Новый файл", self)
+        action2 = QAction("Задача линейного программирования", self)
+        action3 = QAction("Транспортная задача", self)
+        action4 = QAction("Задача о назначениях", self)
+        action5 = QAction("Многопродуктовая транспортная задача", self)
+
+        new_menu.addAction(action1)
+        new_menu.addSeparator()
+        new_menu.addAction(action2)
+        new_menu.addAction(action3)
+        new_menu.addAction(action4)
+        new_menu.addAction(action5)
+
+        open_action = QAction("Открыть", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_file)
+
+        exit_action = QAction("Выход", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+
+        self.file_menu.addMenu(new_menu)
+        self.file_menu.addAction(open_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(exit_action)
+
+    def open_file(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Открыть файл", "", "JSON Files (*.json)")
+        if file_name:
+            print(file_name)
+
     def create_main_page(self):
         main_layout = QHBoxLayout()
         
@@ -56,7 +97,9 @@ class UserInterface(QMainWindow):
         task_type_layout = QVBoxLayout()
         task_type_layout.setAlignment(Qt.AlignTop)
         task_type_layout.setSpacing(10)
-        
+
+        linear_btn = functions.q_push_button("Задача линейного программирования", "background-color: #4CAF50; color: white; padding: 8px;", 
+                                        self.show_linear_table)
         transport_btn = functions.q_push_button("Транспортная задача", "background-color: #4CAF50; color: white; padding: 8px;", 
                                         self.show_transportation_table)
         assignment_btn = functions.q_push_button("Задача о назначениях", "background-color: #2196F3; color: white; padding: 8px;", 
@@ -64,6 +107,7 @@ class UserInterface(QMainWindow):
         multiproduct_btn = functions.q_push_button("Мультипродуктовая задача", "background-color: #FF9800; color: white; padding: 8px;", 
                                         self.show_multiobject_transportation_table)
         
+        task_type_layout.addWidget(linear_btn)
         task_type_layout.addWidget(transport_btn)
         task_type_layout.addWidget(assignment_btn)
         task_type_layout.addWidget(multiproduct_btn)
@@ -92,6 +136,10 @@ class UserInterface(QMainWindow):
         
         self.main_page.setLayout(main_layout)
 
+    def show_linear_table(self):
+        self.problem_type = "ЗЛП"
+        self.show_input_page()
+
     def show_transportation_table(self):
         self.problem_type = "Транспортная задача"
         self.show_input_page()
@@ -112,6 +160,13 @@ class UserInterface(QMainWindow):
         problem = constants.examples[id]
         self.problem_type = problem["type"]
         match problem["type"]:
+            case "Транспортная задача":
+                self.transportation_problem.source_spin.setValue(problem["data"]["size_y"])
+                self.transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.transportation_problem.costs = problem["data"]["costs"]
+                self.transportation_problem.supply = problem["data"]["supply"]
+                self.transportation_problem.demand = problem["data"]["demand"]                
+                self.transportation_problem.write_data_into_input_table()
             case "Задача о назначениях":
                 self.assignment_problem.source_spin.setValue(problem["data"]["size_y"])
                 self.assignment_problem.dest_spin.setValue(problem["data"]["size_x"])
@@ -125,12 +180,12 @@ class UserInterface(QMainWindow):
                 self.multiobject_transportation_problem.demand = problem["data"]["demand"]               
                 self.multiobject_transportation_problem.write_data_into_input_table()
             case _:
-                self.transportation_problem.source_spin.setValue(problem["data"]["size_y"])
-                self.transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
-                self.transportation_problem.costs = problem["data"]["costs"]
-                self.transportation_problem.supply = problem["data"]["supply"]
-                self.transportation_problem.demand = problem["data"]["demand"]                
-                self.transportation_problem.write_data_into_input_table()
+                self.linear_problem.source_spin.setValue(problem["data"]["size_y"])
+                self.linear_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.linear_problem.costs = problem["data"]["costs"]
+                self.linear_problem.supply = problem["data"]["supply"]
+                self.linear_problem.demand = problem["data"]["demand"]                
+                self.linear_problem.write_data_into_input_table()
         self.show_input_page()
 
     def create_input_page(self):
@@ -139,6 +194,12 @@ class UserInterface(QMainWindow):
 
         self.group_top = QStackedWidget()
         self.input_table = QStackedWidget()
+
+        self.linear_problem = LinearProblem()
+        self.group_top.addWidget(self.linear_problem.group_top)
+        self.input_table.addWidget(self.linear_problem.table)
+        self.linear_problem.menu_btn.clicked.connect(self.show_main_page)
+        self.linear_problem.solve_btn.clicked.connect(self.solve)
 
         self.transportation_problem = TransportationProblem(3, 3)
         self.group_top.addWidget(self.transportation_problem.group_top)
@@ -170,6 +231,9 @@ class UserInterface(QMainWindow):
     
     def show_input_page(self):        
         match self.problem_type:
+            case "Транспортная задача":
+                self.group_top.setCurrentWidget(self.transportation_problem.group_top)
+                self.input_table.setCurrentWidget(self.transportation_problem.table)
             case "Задача о назначениях":
                 self.group_top.setCurrentWidget(self.assignment_problem.group_top)
                 self.input_table.setCurrentWidget(self.assignment_problem.table)
@@ -177,8 +241,8 @@ class UserInterface(QMainWindow):
                 self.group_top.setCurrentWidget(self.multiobject_transportation_problem.group_top)
                 self.input_table.setCurrentWidget(self.multiobject_transportation_problem.table)
             case _:
-                self.group_top.setCurrentWidget(self.transportation_problem.group_top)
-                self.input_table.setCurrentWidget(self.transportation_problem.table)
+                self.group_top.setCurrentWidget(self.linear_problem.group_top)
+                self.input_table.setCurrentWidget(self.linear_problem.table)
         self.stacked_widget.setCurrentWidget(self.input_page)
         self.page = "input"
     
@@ -238,6 +302,10 @@ class UserInterface(QMainWindow):
 
     def solve(self):
         match self.problem_type:
+            case "Транспортная задача":
+                self.transportation_problem.solution_table.clearSpans()
+                self.transportation_problem.solve()
+                self.solution_table.setCurrentWidget(self.transportation_problem.solution_table) 
             case "Задача о назначениях":
                 self.assignment_problem.solution_table.clearSpans()
                 self.assignment_problem.solve()
@@ -248,7 +316,7 @@ class UserInterface(QMainWindow):
                 self.multiobject_transportation_problem.solve()
                 self.solution_table.setCurrentWidget(self.multiobject_transportation_problem.solution_table)
             case _:
-                self.transportation_problem.solution_table.clearSpans()
-                self.transportation_problem.solve()
-                self.solution_table.setCurrentWidget(self.transportation_problem.solution_table) 
+                self.linear_problem.solution_table.clearSpans()
+                self.linear_problem.solve()
+                self.solution_table.setCurrentWidget(self.linear_problem.solution_table)
         self.show_solution_page()
