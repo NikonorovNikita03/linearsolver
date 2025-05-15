@@ -1,6 +1,6 @@
 import sys
 import os
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QPushButton, QWidget, QVBoxLayout, QLabel, QLineEdit
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
 
@@ -64,6 +64,55 @@ def q_push_button(name, style, function = None, cursor=True):
     if cursor:
         btn.setCursor(Qt.PointingHandCursor)
     return btn
+
+def input_field(label_text, placeholder=None, text=None, max_length=None, spacing=0):
+    container = QWidget()
+    container_layout = QVBoxLayout(container)
+    container_layout.setContentsMargins(0, 0, 0, 0)
+    container_layout.setSpacing(spacing)
+    
+    label = QLabel(label_text)
+    label.setStyleSheet("""
+        QLabel {
+            color: #333333;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+        }
+    """)
+    label.setContentsMargins(0, 0, 0, 0)
+    
+    line_edit = QLineEdit()
+
+    if placeholder is not None:
+        line_edit.setPlaceholderText(placeholder)
+    
+    if text is not None:
+        line_edit.setText(text)
+
+    if max_length is not None:
+        print(max_length)
+        line_edit.setMaxLength(max_length)
+    
+    line_edit.setStyleSheet("""
+        QLineEdit {
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-size: 14px;
+            margin: 0;
+        }
+        QLineEdit:focus {
+            border: 1px solid #0066ff;
+        }
+    """)
+    line_edit.setContentsMargins(0, 0, 0, 0)
+    
+    container_layout.addWidget(label)
+    container_layout.addWidget(line_edit)
+    
+    return container
 
 colors = {
     "white": (255, 255, 255),

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox, QComboBox
 )
 from PySide6.QtCore import Qt
-from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
+from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure, input_field
 from solver import Solver
 
 class LinearProblem():
@@ -63,6 +63,8 @@ class LinearProblem():
         self.dest_spin.setValue(self.size_x)
         self.dest_spin.valueChanged.connect(self.update_input_table)
         self.dest_layout.addWidget(self.dest_spin)
+
+        self.variable_field = input_field("Название переменной", text = self.variable_name, max_length = 5)
         
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
@@ -70,6 +72,7 @@ class LinearProblem():
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
         self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addWidget(self.variable_field)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
 
