@@ -92,7 +92,6 @@ def input_field(label_text, placeholder=None, text=None, max_length=None, spacin
         line_edit.setText(text)
 
     if max_length is not None:
-        print(max_length)
         line_edit.setMaxLength(max_length)
     
     line_edit.setStyleSheet("""
@@ -111,6 +110,8 @@ def input_field(label_text, placeholder=None, text=None, max_length=None, spacin
     
     container_layout.addWidget(label)
     container_layout.addWidget(line_edit)
+
+    container.line = line_edit
     
     return container
 

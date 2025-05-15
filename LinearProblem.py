@@ -65,6 +65,7 @@ class LinearProblem():
         self.dest_layout.addWidget(self.dest_spin)
 
         self.variable_field = input_field("Название переменной", text = self.variable_name, max_length = 5)
+        self.variable_field.setFixedWidth(132)
         
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
@@ -113,6 +114,8 @@ class LinearProblem():
         self.table.setRowCount(sources + 2)
         self.table.setColumnCount(destinations + 2)
 
+        self.variable_field.line.setText(self.variable_name)
+
         to_write = [[""] + [f"{self.variable_name}{i}" for i in range(1, self.size_x+1)] + [""]]
         to_write.append([f"F ({self.variable_name}) = "] + ["" for i in range(self.size_x)] + [""])
         for i in range(0, sources):
@@ -146,15 +149,15 @@ class LinearProblem():
         sources = rows - 2
         destinations = cols - 2
 
-        new_demand_labels = []
-        for col in range(1, destinations + 2):
-            item = self.table.item(0, col)
-            new_demand_labels.append(item.text())
+        # new_demand_labels = []
+        # for col in range(1, destinations + 2):
+        #     item = self.table.item(0, col)
+        #     new_demand_labels.append(item.text())
         
-        new_supply_labels = []
-        for row in range(1, sources + 2):
-            item = self.table.item(row, 0)
-            new_supply_labels.append(item.text())
+        # new_supply_labels = []
+        # for row in range(1, sources + 2):
+        #     item = self.table.item(row, 0)
+        #     new_supply_labels.append(item.text())
             
         new_supply = []
         for row in range(1, sources + 1):
