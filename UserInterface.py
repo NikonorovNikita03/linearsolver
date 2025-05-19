@@ -182,9 +182,11 @@ class UserInterface(QMainWindow):
             case _:
                 self.linear_problem.source_spin.setValue(problem["data"]["size_y"])
                 self.linear_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.linear_problem.problem_type = problem["data"]["problem_type"]
                 self.linear_problem.costs = problem["data"]["costs"]
-                self.linear_problem.supply = problem["data"]["supply"]
-                self.linear_problem.demand = problem["data"]["demand"]                
+                self.linear_problem.function = problem["data"]["function"]
+                self.linear_problem.constraints = problem["data"]["constraints"]                
+                self.linear_problem.signs = problem["data"]["signs"]
                 self.linear_problem.write_data_into_input_table()
         self.show_input_page()
 
@@ -261,6 +263,7 @@ class UserInterface(QMainWindow):
         self.solution_table.addWidget(self.transportation_problem.solution_table)
         self.solution_table.addWidget(self.multiobject_transportation_problem.solution_table)
         self.solution_table.addWidget(self.assignment_problem.solution_table)
+        self.solution_table.addWidget(self.linear_problem.solution_table)
 
         self.btn_gbox = QGroupBox()
         

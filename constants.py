@@ -201,5 +201,33 @@ examples = {
             "size_x": 4,
             "size_y": 3
         }
+    },
+    5 : {
+        "id": 5,
+        "type": "ЗЛП",
+        "name": "ЗЛП1",
+        "data": {
+            "problem_type": "max",
+            "costs": [[0.02, 0.01], [0.03, 0.01], [0.03, 0.02]],
+            "constraints": [60, 70, 100],
+            "signs": ["<=", "<=", "<="],
+            "function": [10, 4],
+            "size_x": 2,
+            "size_y": 3
+        }
+    },
+    6 : {
+        "id": 6,
+        "type": "ЗЛП",
+        "name": "ЗЛП2",
+        "data": {
+            "problem_type": "max",
+            "costs": [[2, 1], [-4, 5], [-1, 2], [-1, 5]],
+            "constraints": [20, 10, -2, 15],
+            "signs": ["<=", "<=", ">=", "="],
+            "function": [1, 2],
+            "size_x": 2,
+            "size_y": 4
+        }
     }
 }

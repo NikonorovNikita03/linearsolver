@@ -127,9 +127,34 @@ brushes = {}
 for color in colors:
     brushes[color] = QBrush(QColor(*color[1]))
 
+def int_to_subscript(number):
+    """Convert an integer to a string with subscript digits."""
+    subscript_digits = {
+        '0': '₀',
+        '1': '₁',
+        '2': '₂',
+        '3': '₃',
+        '4': '₄',
+        '5': '₅',
+        '6': '₆',
+        '7': '₇',
+        '8': '₈',
+        '9': '₉',
+    }
+    
+    num_str = str(number)
+    subscript_str = ''.join([subscript_digits[char] for char in num_str if char in subscript_digits])
+    return subscript_str
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except AttributeError:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
+def print_table(data):
+    col_widths = [max(len(str(item)) for item in col) for col in zip(*data)]
+    
+    for row in data:
+        print("  ".join(f"{str(item):<{width}}" for item, width in zip(row, col_widths)))
