@@ -202,6 +202,7 @@ class UserInterface(QMainWindow):
         self.input_table.addWidget(self.linear_problem.table)
         self.linear_problem.menu_btn.clicked.connect(self.show_main_page)
         self.linear_problem.solve_btn.clicked.connect(self.solve)
+        
 
         self.transportation_problem = TransportationProblem(3, 3)
         self.group_top.addWidget(self.transportation_problem.group_top)
