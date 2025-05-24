@@ -57,14 +57,18 @@ class UserInterface(QMainWindow):
 
         new_menu = QMenu("Создать", self)
         
-        action1 = QAction("Новый файл", self)
+        # action1 = QAction("Новый файл", self)
         action2 = QAction("Задача линейного программирования", self)
+        action2.triggered.connect(self.show_linear_table)
         action3 = QAction("Транспортная задача", self)
+        action3.triggered.connect(self.show_transportation_table)
         action4 = QAction("Задача о назначениях", self)
+        action4.triggered.connect(self.show_assignment_table)
         action5 = QAction("Многопродуктовая транспортная задача", self)
+        action5.triggered.connect(self.show_multiobject_transportation_table)
 
-        new_menu.addAction(action1)
-        new_menu.addSeparator()
+        # new_menu.addAction(action1)
+        # new_menu.addSeparator()
         new_menu.addAction(action2)
         new_menu.addAction(action3)
         new_menu.addAction(action4)
@@ -102,9 +106,9 @@ class UserInterface(QMainWindow):
                                         self.show_linear_table)
         transport_btn = functions.q_push_button("Транспортная задача", "background-color: #4CAF50; color: white; padding: 8px;", 
                                         self.show_transportation_table)
-        assignment_btn = functions.q_push_button("Задача о назначениях", "background-color: #2196F3; color: white; padding: 8px;", 
+        assignment_btn = functions.q_push_button("Задача о назначениях", "background-color: #4CAF50; color: white; padding: 8px;", 
                                         self.show_assignment_table)
-        multiproduct_btn = functions.q_push_button("Мультипродуктовая задача", "background-color: #FF9800; color: white; padding: 8px;", 
+        multiproduct_btn = functions.q_push_button("Мультипродуктовая задача", "background-color: #4CAF50; color: white; padding: 8px;", 
                                         self.show_multiobject_transportation_table)
         
         task_type_layout.addWidget(linear_btn)
@@ -201,8 +205,7 @@ class UserInterface(QMainWindow):
         self.group_top.addWidget(self.linear_problem.group_top)
         self.input_table.addWidget(self.linear_problem.table)
         self.linear_problem.menu_btn.clicked.connect(self.show_main_page)
-        self.linear_problem.solve_btn.clicked.connect(self.solve)
-        
+        self.linear_problem.solve_btn.clicked.connect(self.solve) 
 
         self.transportation_problem = TransportationProblem(3, 3)
         self.group_top.addWidget(self.transportation_problem.group_top)
@@ -286,12 +289,12 @@ class UserInterface(QMainWindow):
 
         back_btn = functions.q_push_button(
             "Назад",
-            constants.export_csv_btn_ss, 
+            constants.solve_btn, 
             self.show_input_page
         )
         
-        btn_layout.addWidget(solution_copy_btn)
-        btn_layout.addWidget(self.export_csv_btn)
+        # btn_layout.addWidget(solution_copy_btn)
+        # btn_layout.addWidget(self.export_csv_btn)
         btn_layout.addStretch()
         btn_layout.addWidget(back_btn)
 

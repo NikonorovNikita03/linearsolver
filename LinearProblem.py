@@ -69,6 +69,7 @@ class LinearProblem():
 
         self.variable_field = input_field("Название переменной", text = self.variable_name, max_length = 5)
         self.variable_field.setFixedWidth(132)
+        self.variable_field.line.textChanged.connect(self.update_input_table)
         
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
@@ -112,19 +113,6 @@ class LinearProblem():
         
         self.table.setRowCount(sources + 2)
         self.table.setColumnCount(destinations + 2)
-
-        # if len(self.supply_labels) <= sources:
-        #     for i in range(len(self.supply_labels), sources + 1):
-        #         self.supply_labels.insert(i - 1, "Поставщик " + str(i))
-        #         self.supply.append(0)
-        #         self.costs.append([0 for x in range(len(self.costs[0]))])
-
-        # if len(self.demand_labels) <= destinations:
-        #     for j in range(len(self.demand_labels), destinations + 1):
-        #         self.demand_labels.insert(j - 1, "Потребитель " + str(j))
-        #         self.demand.append(0)    
-        #         for k in range(len(self.costs)):
-        #             self.costs[k].append(0)
         
         for i in range(destinations + 2):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
@@ -178,32 +166,14 @@ class LinearProblem():
     def get_data_from_input_table(self):
         rows = self.table.rowCount()
         cols = self.table.columnCount()
+
+        self.variable_name = self.variable_field.line.text()
         
         if rows < 3 or cols < 3: 
             raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
         
         sources = rows - 2
         destinations = cols - 2
-
-        # new_demand_labels = []
-        # for col in range(1, destinations + 2):
-        #     item = self.table.item(0, col)
-        #     new_demand_labels.append(item.text())
-        
-        # new_supply_labels = []
-        # for row in range(1, sources + 2):
-        #     item = self.table.item(row, 0)
-        #     new_supply_labels.append(item.text())
-            
-        # new_supply = []
-        # for row in range(1, sources + 1):
-        #     item = self.table.item(row, destinations + 1)
-        #     new_supply.append(int(item.text()) if item and item.text().isdigit() else 0)
-        
-        # new_demand = []
-        # for col in range(1, destinations + 1):
-        #     item = self.table.item(sources + 1, col)
-        #     new_demand.append(int(item.text()) if item and item.text().isdigit() else 0)
 
         if self.table.cellWidget(0, 0).currentText() != "Минимизация":
             self.problem_type = "max"
@@ -243,14 +213,10 @@ class LinearProblem():
                     self.error = "Введённое значение не является числом"
             new_costs.append(cost_row)
 
-        # self.supply = combine_arrays_1d_pure(new_supply, self.supply)
-        # self.demand = combine_arrays_1d_pure(new_demand, self.demand)
         self.function = combine_arrays_1d_pure(new_function, self.function)
         self.constraints = combine_arrays_1d_pure(new_constraints, self.constraints)
         self.signs = combine_arrays_1d_pure(new_signs, self.signs)
         self.costs = combine_arrays_pure(new_costs, self.costs)
-        # self.supply_labels = combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
-        # self.demand_labels = combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
 
     def update_input_table(self):
         self.get_data_from_input_table()
@@ -259,20 +225,6 @@ class LinearProblem():
 
     def solve(self):
         self.get_data_from_input_table()
-        # costs, supply, demand = self.costs, self.supply, self.demand
-        
-        # problem = Solver(supply, demand, costs)
-        # result_matrix, self.total_cost = problem.solve_transportation_scipy()
-
-
-        # sources = len(result_matrix)
-        # destinations = len(result_matrix[0]) if sources > 0 else 0
-
-        print(self.function)
-        print(self.costs)
-        print(self.signs)
-        print(self.constraints)
-
         max = self.table.cellWidget(0, 0).currentText() != "Минимизация"
 
         if max:
@@ -297,6 +249,11 @@ class LinearProblem():
                 case _:
                     continue
 
+        if A_eq == []:
+            A_eq = None
+        if b_eq == []:
+            b_eq = None
+        
         result = linprog(
             c=self.function,
             A_ub=A_ub,

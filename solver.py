@@ -61,7 +61,7 @@ class Solver(object):
         for i in range(n_sources):
             for j in range(n_destinations):
                 for p in range(n_products):
-                    c_list.append(costs[i, j, p] if i < 3 else 0)  # фиктивный поставщик имеет нулевую стоимость
+                    c_list.append(costs[i, j, p] if i < 3 else 0)
 
         c = np.array(c_list)
 
@@ -102,7 +102,6 @@ class Solver(object):
             old_supply = self.supply_vector[supply_index]
             self.supply_vector[supply_index] = self.bound_top[2]        
             self.supply_vector = np.insert(np.copy(self.supply_vector), supply_index + 1, old_supply - self.bound_top[2])
-            #self.supply_vector.insert(supply_index + 1, old_supply - self.bound_top[2])
 
             row_i = self.cost_matrix[supply_index, :].copy()
             new_row_for_i_b = row_i.copy()
