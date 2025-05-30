@@ -184,13 +184,16 @@ class UserInterface(QMainWindow):
                 self.multiobject_transportation_problem.demand = problem["data"]["demand"]               
                 self.multiobject_transportation_problem.write_data_into_input_table()
             case _:
-                self.linear_problem.source_spin.setValue(problem["data"]["size_y"])
-                self.linear_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.linear_problem.source_spin.setValue(len(problem["data"]["constraints"]))
+                self.linear_problem.dest_spin.setValue(len(problem["data"]["function"]))
+                # self.linear_problem.size_x = len(problem["data"]["function"])
+                # self.linear_problem.size_y = len(problem["data"]["constraints"])
                 self.linear_problem.problem_type = problem["data"]["problem_type"]
                 self.linear_problem.costs = problem["data"]["costs"]
                 self.linear_problem.function = problem["data"]["function"]
                 self.linear_problem.constraints = problem["data"]["constraints"]                
                 self.linear_problem.signs = problem["data"]["signs"]
+                self.linear_problem.update_table_size()
                 self.linear_problem.write_data_into_input_table()
         self.show_input_page()
 
@@ -272,7 +275,7 @@ class UserInterface(QMainWindow):
         self.btn_gbox = QGroupBox()
         
         btn_layout = QHBoxLayout()
-        btn_layout.setContentsMargins(5, 25, 5, 5)
+        btn_layout.setContentsMargins(5, 5, 5, 5)
         btn_layout.setSpacing(10)
         
         solution_copy_btn = functions.q_push_button(

@@ -16,9 +16,6 @@ class MultiobjectiveTransportationProblem():
         self.control_layout = QHBoxLayout()
         self.size_x = size_x
         self.size_y = size_y
-        # self.costs = [[0 for x in range(self.size_x)] for y in range(self.size_y)]
-        # self.supply = [0 for y in range(self.size_y)]
-        # self.demand = [0 for x in range(self.size_x)]
         self.costs = []
         for y in range(self.size_y):
             self.costs.append([])
@@ -71,17 +68,8 @@ class MultiobjectiveTransportationProblem():
         self.dest_spin.valueChanged.connect(self.update_input_table)
         self.dest_layout.addWidget(self.dest_spin)
         
-        #self.text_input_btn = self.q_push_button("Ввести текстом", constants.text_input_btn, self.show_text_input_page)
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
-        
-        #self.solve
-        #self.multiproduct_btn = self.q_push_button("Мультипродуктовая задача", constants.multiproduct_btn_ss, self.show_multiproduct_table)
-        #self.examples_btn = self.q_push_button("Примеры", constants.examples_btn_ss, self.show_examples_page)
-        
-        #self.back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
-        #self.back_btn.setVisible(False)
-        
 
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
@@ -90,11 +78,6 @@ class MultiobjectiveTransportationProblem():
         self.control_layout.addWidget(self.solve_btn)
 
         self.group_top.setLayout(self.control_layout)
-        #control_layout.addWidget(self.text_input_btn)
-        # control_layout.addWidget(self.back_btn)
-        # control_layout.addWidget(self.examples_btn)
-        
-        #control_layout.addWidget(self.multiproduct_btn)
 
     def update_table_size(self):  
         sources = self.source_spin.value()
@@ -108,8 +91,6 @@ class MultiobjectiveTransportationProblem():
 
         self.table.setRowCount(size_y)
         self.table.setColumnCount(size_x)
-        # self.table.setRowCount(sources + 2)
-        # self.table.setColumnCount(destinations + 2)
 
         if len(self.supply_labels) <= sources:
             for i in range(len(self.supply_labels), sources + 1):
@@ -131,24 +112,6 @@ class MultiobjectiveTransportationProblem():
             self.table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
     
     def write_data_into_input_table(self):
-        # sources = self.size_y
-        # destinations = self.size_x
-        # self.table.setRowCount(sources + 2)
-        # self.table.setColumnCount(destinations + 2)
-
-        # to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
-        # for i in range(0, sources):
-        #     this = [self.supply_labels[i]] + self.costs[i][0:destinations] + [self.supply[i]]
-        #     to_write.append(this)
-        # to_write.append([self.demand_labels[-1]] + self.demand + [""])
-
-        # for y in range(sources + 2):
-        #     for x in range(destinations + 2):
-        #         item = QTableWidgetItem(str(to_write[y][x]))
-        #         item.setTextAlignment(Qt.AlignCenter)
-        #         self.table.setItem(y, x, item)
-        
-        #self.highlight_table_regions()
         size_y = 3 + 2 * self.size_y
         size_x = 3 + 2 * self.size_x
         product_number = 2
@@ -212,29 +175,10 @@ class MultiobjectiveTransportationProblem():
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(y, x, item)
-    
-        # for i in range(self.table.columnCount()):
-        #     self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
-        
-        # for i in range(self.table.rowCount()):
-        #     self.table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
     def get_data_from_input_table(self):
         rows = self.table.rowCount()
         cols = self.table.columnCount()
-        
-        # if rows < 3 or cols < 3:  # Минимум 1 поставщик, 1 потребитель + заголовки
-        #     raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
-
-        # new_demand_labels = []
-        # for col in range(1, destinations + 2):
-        #     item = self.combined_table.item(0, col)
-        #     new_demand_labels.append(item.text())
-        
-        # new_supply_labels = []
-        # for row in range(1, sources + 2):
-        #     item = self.combined_table.item(row, 0)
-        #     new_supply_labels.append(item.text())
             
         new_supply = []
         for row in range(self.size_y):
@@ -277,8 +221,6 @@ class MultiobjectiveTransportationProblem():
         self.supply = combine_arrays_1d_pure(new_supply, self.supply)
         self.demand = combine_arrays_1d_pure(new_demand, self.demand)
         self.costs = combine_arrays_pure(new_costs, self.costs)
-        # self.supply_labels = functions.combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
-        # self.demand_labels = functions.combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
 
     def update_input_table(self):
         self.get_data_from_input_table()
@@ -290,8 +232,6 @@ class MultiobjectiveTransportationProblem():
         
         problem = Solver(self.supply, self.demand, self.costs)
         result_matrix, self.total_cost, info = problem.solve_transportation_scipy_double()
-
-        #print(info)
 
         size_y = 2 + 2 * len(result_matrix)
         size_x = 2 + 2 * len(result_matrix[0])
@@ -364,8 +304,3 @@ class MultiobjectiveTransportationProblem():
         item.setTextAlignment(Qt.AlignCenter)
         self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))
         
-
-
-        # self.total_cost_label.setText(f"Общая стоимость: {constants.stringify(self.total_cost)}")
-
-        # self.show_solution_page()

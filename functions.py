@@ -56,7 +56,7 @@ def str_to_number(s):
     except:
         return 0
     
-def q_push_button(name, style, function = None, cursor=True):
+def q_push_button(name, style="", function = None, cursor=True):
     btn = QPushButton(name)
     btn.setStyleSheet(style)
     if function:
