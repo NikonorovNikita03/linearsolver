@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox
 )
 from PySide6.QtCore import Qt
-from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
+from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure, input_field, int_to_subscript
 from scipy.optimize import linear_sum_assignment
 
 class AssignmentProblem():
@@ -20,8 +20,11 @@ class AssignmentProblem():
         self.size_y = size_y
         self.costs = [[0 for x in range(self.size_x)] for y in range(self.size_y)]
         self.total_cost = 0
-        self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)]
-        self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)]
+
+        self.variable_name_x = "x"
+        self.variable_names_x = ["x₁", "x₂", "x₃"]
+        self.variable_name_y = "y"
+        self.variable_names_y = ["y₁", "y₂", "y₃"]
 
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
@@ -30,12 +33,10 @@ class AssignmentProblem():
         s_header = self.solution_table.horizontalHeader()
         s_header.setSectionResizeMode(QHeaderView.Stretch)
         s_header.setDefaultAlignment(Qt.AlignCenter)
-        #s_header.setStyleSheet(constants.solution_page_h_header_ss)
         
         s_v_header = self.solution_table.verticalHeader()
         s_v_header.setSectionResizeMode(QHeaderView.Stretch)
         s_v_header.setDefaultAlignment(Qt.AlignCenter)
-        #s_v_header.setStyleSheet(constants.solution_page_v_header_ss)
 
         self.set_top_layout()
         self.update_table_size()
@@ -63,30 +64,38 @@ class AssignmentProblem():
         self.dest_spin.valueChanged.connect(self.update_input_table)
         self.dest_layout.addWidget(self.dest_spin)
         
-        #self.text_input_btn = self.q_push_button("Ввести текстом", constants.text_input_btn, self.show_text_input_page)
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
         
-        #self.solve
-        #self.multiproduct_btn = self.q_push_button("Мультипродуктовая задача", constants.multiproduct_btn_ss, self.show_multiproduct_table)
-        #self.examples_btn = self.q_push_button("Примеры", constants.examples_btn_ss, self.show_examples_page)
-        
-        #self.back_btn = self.q_push_button("Назад", constants.back_btn_ss, self.show_input_page)
-        #self.back_btn.setVisible(False)
-        
+        self.variable_field_x = input_field("Название столбцов", text = self.variable_name_x, max_length = 20)
+        self.variable_field_x.setFixedWidth(132)
+        self.variable_field_y = input_field("Название строк", text = self.variable_name_y, max_length = 20)
+        self.variable_field_y.setFixedWidth(132)
 
+        self.variable_btn_x = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_x.clicked.connect(self.variable_name_changed_x)
+        self.variable_btn_y = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
+
+        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
+        self.control_layout.addWidget(self.variable_field_x)
+        self.control_layout.addWidget(self.variable_btn_x)
+        self.control_layout.addWidget(self.variable_field_y)
+        self.control_layout.addWidget(self.variable_btn_y)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
 
         self.group_top.setLayout(self.control_layout)
-        #control_layout.addWidget(self.text_input_btn)
-        # control_layout.addWidget(self.back_btn)
-        # control_layout.addWidget(self.examples_btn)
-        
-        #control_layout.addWidget(self.multiproduct_btn)
+
+    def variable_name_changed_x(self):
+        self.update_input_table(refresh_names_x = True)
+    
+    def variable_name_changed_y(self):
+        self.update_input_table(refresh_names_y = True)
 
     def update_table_size(self):  
         sources = self.source_spin.value()
@@ -98,14 +107,14 @@ class AssignmentProblem():
         self.table.setRowCount(sources + 1)
         self.table.setColumnCount(destinations + 1)
 
-        if len(self.supply_labels) < sources:
-            for i in range(len(self.supply_labels) + 1, sources + 1):
-                self.supply_labels.insert(i - 1, "Поставщик " + str(i))
+        if len(self.variable_names_x) < self.size_x:
+            for i in range(len(self.variable_names_x), self.size_x):
+                self.variable_names_x.append(f"{self.variable_name_x}{int_to_subscript(i + 1)}")
                 self.costs.append([0 for x in range(len(self.costs[0]))])
-        
-        if len(self.demand_labels) < destinations:
-            for j in range(len(self.demand_labels) + 1, destinations + 1):
-                self.demand_labels.insert(j - 1, "Потребитель " + str(j))
+
+        if len(self.variable_names_y) < self.size_y:
+            for i in range(len(self.variable_names_y), self.size_y):
+                self.variable_names_y.append(f"{self.variable_name_y}{int_to_subscript(i + 1)}")
                 for k in range(len(self.costs)):
                     self.costs[k].append(0)
         
@@ -121,9 +130,9 @@ class AssignmentProblem():
         self.table.setRowCount(sources + 1)
         self.table.setColumnCount(destinations + 1)
 
-        to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
+        to_write = [[""] + self.variable_names_x[0:self.size_x]]
         for i in range(0, sources):
-            this = [self.supply_labels[i]] + self.costs[i][0:destinations]
+            this = [self.variable_names_y[i]] + self.costs[i][0:destinations]
             to_write.append(this)
 
         for y in range(sources + 1):
@@ -131,10 +140,8 @@ class AssignmentProblem():
                 item = QTableWidgetItem(str(to_write[y][x]))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(y, x, item)
-        
-        #self.highlight_table_regions()
 
-    def get_data_from_input_table(self):
+    def get_data_from_input_table(self, refresh_names_x, refresh_names_y):
         rows = self.table.rowCount()
         cols = self.table.columnCount()
         
@@ -144,15 +151,31 @@ class AssignmentProblem():
         sources = rows - 2
         destinations = cols - 2
 
-        new_demand_labels = []
-        for col in range(1, destinations + 1):
-            item = self.table.item(0, col)
-            new_demand_labels.append(item.text())
-        
-        new_supply_labels = []
-        for row in range(1, sources + 1):
-            item = self.table.item(row, 0)
-            new_supply_labels.append(item.text())
+        if refresh_names_x:
+            x = self.dest_spin.value()
+            self.variable_name = self.variable_field_x.line.text()
+            self.variable_names = [f"{self.variable_name}{int_to_subscript(i)}" for i in range(1, x + 1)]
+        else:
+            new_variable_names = []
+            for col in range(1, self.table.columnCount()):
+                item = self.table.item(0, col)
+                if item:
+                    new_variable_names.append(item.text())
+                else:
+                    new_variable_names.append("")
+            self.variable_names_x = combine_arrays_1d_pure(new_variable_names, self.variable_names_x)
+
+        if refresh_names_y:
+            y = self.source_spin.value()
+            self.variable_name_y = self.variable_field_y.line.text()
+            self.variable_names_y = [f"{self.variable_name_y} {i}" for i in range(1, y + 1)]
+        else:
+            new_variable_names_y = []
+            for row in range(1, self.table.rowCount()):
+                item = self.table.item(row, 0)
+                if item:
+                    new_variable_names_y.append(item.text())
+            self.variable_names_y = combine_arrays_1d_pure(new_variable_names_y, self.variable_names_y)
         
         new_costs = []
         for row in range(1, sources + 1):
@@ -163,11 +186,9 @@ class AssignmentProblem():
             new_costs.append(cost_row)
 
         self.costs = combine_arrays_pure(new_costs, self.costs)
-        self.supply_labels = combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
-        self.demand_labels = combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
 
-    def update_input_table(self):
-        self.get_data_from_input_table()
+    def update_input_table(self, number = 0, refresh_names_x = False, refresh_names_y = False):
+        self.get_data_from_input_table(refresh_names_x, refresh_names_y)
         self.update_table_size()
         self.write_data_into_input_table()
 
@@ -183,9 +204,9 @@ class AssignmentProblem():
         result_matrix = [(int(x), int(y)) for (x, y) in assignments]
 
         if self.size_x == self.size_y:
-            to_write = [[""] + self.demand_labels]
+            to_write = [[""] + self.variable_names_x[0:self.size_x]]
             for y in range(self.size_y):
-                to_write.append([self.supply_labels[y]] + [0 for x in range(self.size_x)])
+                to_write.append([self.variable_names_y[y]] + [0 for x in range(self.size_x)])
             for r in result_matrix:
                 to_write[r[0] + 1][r[1] + 1] = 1
         else:

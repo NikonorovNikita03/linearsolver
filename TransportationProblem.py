@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox
 )
 from PySide6.QtCore import Qt
-from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
+from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure, input_field, int_to_subscript
 from solver import Solver
 
 class TransportationProblem():
@@ -23,9 +23,16 @@ class TransportationProblem():
         self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
         self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
 
+
+        self.variable_name_x = "x"
+        self.variable_names_x = ["x₁", "x₂", "x₃"]
+        self.variable_name_y = "y"
+        self.variable_names_y = ["y₁", "y₂", "y₃"]
+        self.variable_names_end_x = "Поставщики"
+        self.variable_names_end_y = "Потребители"
+
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
-        #self.solution_table.setStyleSheet(constants.solution_table_ss)
         
         s_header = self.solution_table.horizontalHeader()
         s_header.setSectionResizeMode(QHeaderView.Stretch)
@@ -66,13 +73,35 @@ class TransportationProblem():
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
 
+        self.variable_field_x = input_field("Название столбцов", text = self.variable_name_x, max_length = 20)
+        self.variable_field_x.setFixedWidth(132)
+        self.variable_field_y = input_field("Название строк", text = self.variable_name_y, max_length = 20)
+        self.variable_field_y.setFixedWidth(132)
+
+        self.variable_btn_x = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_x.clicked.connect(self.variable_name_changed_x)
+        self.variable_btn_y = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
+
+        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
+        self.control_layout.addWidget(self.variable_field_x)
+        self.control_layout.addWidget(self.variable_btn_x)
+        self.control_layout.addWidget(self.variable_field_y)
+        self.control_layout.addWidget(self.variable_btn_y)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
 
         self.group_top.setLayout(self.control_layout)
+
+    def variable_name_changed_x(self):
+        self.update_input_table(refresh_names_x = True)
+    
+    def variable_name_changed_y(self):
+        self.update_input_table(refresh_names_y = True)
 
     def update_table_size(self):  
         sources = self.source_spin.value()
@@ -86,13 +115,13 @@ class TransportationProblem():
 
         if len(self.supply_labels) <= sources:
             for i in range(len(self.supply_labels), sources + 1):
-                self.supply_labels.insert(i - 1, "Поставщик " + str(i))
+                self.variable_names_x.append(f"{self.variable_name_x}{int_to_subscript(i + 1)}")
                 self.supply.append(0)
                 self.costs.append([0 for x in range(len(self.costs[0]))])
 
         if len(self.demand_labels) <= destinations:
             for j in range(len(self.demand_labels), destinations + 1):
-                self.demand_labels.insert(j - 1, "Потребитель " + str(j))
+                self.variable_names_y.append(f"{self.variable_name_y}{int_to_subscript(j + 1)}")
                 self.demand.append(0)    
                 for k in range(len(self.costs)):
                     self.costs[k].append(0)
@@ -109,21 +138,19 @@ class TransportationProblem():
         self.table.setRowCount(sources + 2)
         self.table.setColumnCount(destinations + 2)
 
-        to_write = [[""] + self.demand_labels[0:destinations] + [self.demand_labels[-1]]]
+        to_write = [[""] + self.variable_names_x[0:self.size_x] + [self.variable_names_end_y]]
         for i in range(0, sources):
-            this = [self.supply_labels[i]] + self.costs[i][0:destinations] + [self.supply[i]]
+            this = [self.variable_names_y[i]] + self.costs[i][0:destinations] + [self.supply[i]]
             to_write.append(this)
-        to_write.append([self.supply_labels[-1]] + self.demand + [""])
+        to_write.append([self.variable_names_end_x] + self.demand + [""])
 
         for y in range(sources + 2):
             for x in range(destinations + 2):
                 item = QTableWidgetItem(str(to_write[y][x]))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(y, x, item)
-        
-        #self.highlight_table_regions()
 
-    def get_data_from_input_table(self):
+    def get_data_from_input_table(self, refresh_names_x = False, refresh_names_y = False):
         rows = self.table.rowCount()
         cols = self.table.columnCount()
         
@@ -133,15 +160,31 @@ class TransportationProblem():
         sources = rows - 2
         destinations = cols - 2
 
-        new_demand_labels = []
-        for col in range(1, destinations + 2):
-            item = self.table.item(0, col)
-            new_demand_labels.append(item.text())
-        
-        new_supply_labels = []
-        for row in range(1, sources + 2):
-            item = self.table.item(row, 0)
-            new_supply_labels.append(item.text())
+        if refresh_names_x:
+            x = self.dest_spin.value()
+            self.variable_name = self.variable_field_x.line.text()
+            self.variable_names = [f"{self.variable_name}{int_to_subscript(i)}" for i in range(1, x + 1)]
+        else:
+            new_variable_names = []
+            for col in range(1, self.table.columnCount()):
+                item = self.table.item(0, col)
+                if item:
+                    new_variable_names.append(item.text())
+                else:
+                    new_variable_names.append("")
+            self.variable_names_x = combine_arrays_1d_pure(new_variable_names, self.variable_names_x)
+
+        if refresh_names_y:
+            y = self.source_spin.value()
+            self.variable_name_y = self.variable_field_y.line.text()
+            self.variable_names_y = [f"{self.variable_name_y}{int_to_subscript(i)}" for i in range(1, y + 1)]
+        else:
+            new_variable_names_y = []
+            for row in range(1, self.table.rowCount()):
+                item = self.table.item(row, 0)
+                if item:
+                    new_variable_names_y.append(item.text())
+            self.variable_names_y = combine_arrays_1d_pure(new_variable_names_y, self.variable_names_y)
             
         new_supply = []
         for row in range(1, sources + 1):
@@ -164,31 +207,38 @@ class TransportationProblem():
         self.supply = combine_arrays_1d_pure(new_supply, self.supply)
         self.demand = combine_arrays_1d_pure(new_demand, self.demand)
         self.costs = combine_arrays_pure(new_costs, self.costs)
-        self.supply_labels = combine_arrays_1d_pure(new_supply_labels[0:-1], self.supply_labels)
-        self.demand_labels = combine_arrays_1d_pure(new_demand_labels[0:-1], self.demand_labels)
 
-    def update_input_table(self):
-        self.get_data_from_input_table()
+    def update_input_table(self, number = 0, refresh_names_x = False, refresh_names_y = False):
+        self.get_data_from_input_table(refresh_names_x, refresh_names_y)
         self.update_table_size()
         self.write_data_into_input_table()
 
     def solve(self):
         self.get_data_from_input_table()
         costs, supply, demand = self.costs, self.supply, self.demand
-        
+
+        supply = supply[0:self.size_y]
+        demand = demand[0:self.size_x]
+        costs = [row[0:self.size_x] for row in costs[0:self.size_y]]
+
         problem = Solver(supply, demand, costs)
         result_matrix, self.total_cost = problem.solve_transportation_scipy()
 
         sources = len(result_matrix)
         destinations = len(result_matrix[0]) if sources > 0 else 0
 
-        to_write = [[""] + self.demand_labels[0:self.size_x]]
+        to_write = [[""] + self.variable_names_x[0:self.size_x]]
+        # to_write = [[""] + self.demand_labels[0:self.size_x]]
+
+        # print(result_matrix)
+        # print(self.size_x)
 
         if destinations > self.size_x:
             to_write[0].append("Фиктивный потребитель")
 
         for i in range(0, self.size_y):
-            this = [self.supply_labels[i]] + result_matrix[i].tolist()
+            this = [self.variable_names_y[i]] + result_matrix[i].tolist()
+            # this = [self.supply_labels[i]] + result_matrix[i].tolist()
             to_write.append(this)
     
         if sources > self.size_y:
@@ -203,6 +253,7 @@ class TransportationProblem():
         for i in range(len(to_write)):
             self.solution_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
+        print(to_write)
         for y in range(len(to_write)):
             for x in range(len(to_write[0])):
                 val = to_write[y][x]

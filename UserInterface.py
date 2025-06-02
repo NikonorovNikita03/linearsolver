@@ -25,7 +25,7 @@ class UserInterface(QMainWindow):
         self.icon.addFile(functions.resource_path('images/calculator.svg'))
         self.setWindowIcon(self.icon)
 
-        self.create_menu_bar()
+        # self.create_menu_bar()
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -50,42 +50,42 @@ class UserInterface(QMainWindow):
 
         self.main_layout.addWidget(self.stacked_widget)
 
-    def create_menu_bar(self):
-        self.menu_bar = self.menuBar()
+    # def create_menu_bar(self):
+    #     self.menu_bar = self.menuBar()
         
-        self.file_menu = self.menu_bar.addMenu("Файл")
+    #     self.file_menu = self.menu_bar.addMenu("Файл")
 
-        new_menu = QMenu("Создать", self)
+    #     new_menu = QMenu("Создать", self)
         
-        # action1 = QAction("Новый файл", self)
-        action2 = QAction("Задача линейного программирования", self)
-        action2.triggered.connect(self.show_linear_table)
-        action3 = QAction("Транспортная задача", self)
-        action3.triggered.connect(self.show_transportation_table)
-        action4 = QAction("Задача о назначениях", self)
-        action4.triggered.connect(self.show_assignment_table)
-        action5 = QAction("Многопродуктовая транспортная задача", self)
-        action5.triggered.connect(self.show_multiobject_transportation_table)
+    #     # action1 = QAction("Новый файл", self)
+    #     action2 = QAction("Задача линейного программирования", self)
+    #     action2.triggered.connect(self.show_linear_table)
+    #     action3 = QAction("Транспортная задача", self)
+    #     action3.triggered.connect(self.show_transportation_table)
+    #     action4 = QAction("Задача о назначениях", self)
+    #     action4.triggered.connect(self.show_assignment_table)
+    #     action5 = QAction("Многопродуктовая транспортная задача", self)
+    #     action5.triggered.connect(self.show_multiobject_transportation_table)
 
-        # new_menu.addAction(action1)
-        # new_menu.addSeparator()
-        new_menu.addAction(action2)
-        new_menu.addAction(action3)
-        new_menu.addAction(action4)
-        new_menu.addAction(action5)
+    #     # new_menu.addAction(action1)
+    #     # new_menu.addSeparator()
+    #     new_menu.addAction(action2)
+    #     new_menu.addAction(action3)
+    #     new_menu.addAction(action4)
+    #     new_menu.addAction(action5)
 
-        open_action = QAction("Открыть", self)
-        open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(self.open_file)
+    #     open_action = QAction("Открыть", self)
+    #     open_action.setShortcut("Ctrl+O")
+    #     open_action.triggered.connect(self.open_file)
 
-        exit_action = QAction("Выход", self)
-        exit_action.setShortcut("Ctrl+Q")
-        exit_action.triggered.connect(self.close)
+    #     exit_action = QAction("Выход", self)
+    #     exit_action.setShortcut("Ctrl+Q")
+    #     exit_action.triggered.connect(self.close)
 
-        self.file_menu.addMenu(new_menu)
-        self.file_menu.addAction(open_action)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(exit_action)
+    #     self.file_menu.addMenu(new_menu)
+    #     self.file_menu.addAction(open_action)
+    #     self.file_menu.addSeparator()
+    #     self.file_menu.addAction(exit_action)
 
     def open_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Открыть файл", "", "JSON Files (*.json)")
@@ -165,16 +165,22 @@ class UserInterface(QMainWindow):
         self.problem_type = problem["type"]
         match problem["type"]:
             case "Транспортная задача":
-                self.transportation_problem.source_spin.setValue(problem["data"]["size_y"])
-                self.transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.transportation_problem.source_spin.setValue(len(problem["data"]["costs"]))
+                self.transportation_problem.dest_spin.setValue(len(problem["data"]["costs"][0]))
                 self.transportation_problem.costs = problem["data"]["costs"]
                 self.transportation_problem.supply = problem["data"]["supply"]
                 self.transportation_problem.demand = problem["data"]["demand"]                
+                self.transportation_problem.variable_names_x = problem["data"]["names_x"]
+                self.transportation_problem.variable_names_y = problem["data"]["names_y"]
+                self.transportation_problem.update_table_size()
                 self.transportation_problem.write_data_into_input_table()
             case "Задача о назначениях":
-                self.assignment_problem.source_spin.setValue(problem["data"]["size_y"])
-                self.assignment_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.assignment_problem.source_spin.setValue(len(problem["data"]["costs"]))
+                self.assignment_problem.dest_spin.setValue(len(problem["data"]["costs"][0]))
                 self.assignment_problem.costs = problem["data"]["costs"]
+                self.assignment_problem.variable_names_x = problem["data"]["names_x"]
+                self.assignment_problem.variable_names_y = problem["data"]["names_y"]
+                self.assignment_problem.update_table_size()
                 self.assignment_problem.write_data_into_input_table()
             case "Многопродуктовая транспортная задача":
                 self.multiobject_transportation_problem.source_spin.setValue(problem["data"]["size_y"])
@@ -186,13 +192,13 @@ class UserInterface(QMainWindow):
             case _:
                 self.linear_problem.source_spin.setValue(len(problem["data"]["constraints"]))
                 self.linear_problem.dest_spin.setValue(len(problem["data"]["function"]))
-                # self.linear_problem.size_x = len(problem["data"]["function"])
-                # self.linear_problem.size_y = len(problem["data"]["constraints"])
                 self.linear_problem.problem_type = problem["data"]["problem_type"]
                 self.linear_problem.costs = problem["data"]["costs"]
                 self.linear_problem.function = problem["data"]["function"]
                 self.linear_problem.constraints = problem["data"]["constraints"]                
                 self.linear_problem.signs = problem["data"]["signs"]
+                self.linear_problem.variable_names = problem["data"]["names_x"]
+                self.linear_problem.variable_names_y = problem["data"]["names_y"]
                 self.linear_problem.update_table_size()
                 self.linear_problem.write_data_into_input_table()
         self.show_input_page()

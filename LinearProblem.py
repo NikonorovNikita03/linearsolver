@@ -1,11 +1,10 @@
 import constants
 from PySide6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QSpinBox, QVBoxLayout, QLabel, QWidget,
+    QHBoxLayout, QVBoxLayout, QSpinBox, QVBoxLayout, QLabel,
     QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox, QComboBox,
 )
-from PySide6.QtGui import QTextDocument, QTextCursor
 from PySide6.QtCore import Qt
-from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure, input_field, int_to_subscript, print_table
+from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure, input_field, int_to_subscript
 from scipy.optimize import linprog
 
 class LinearProblem():
@@ -16,8 +15,9 @@ class LinearProblem():
         self.group_top = QGroupBox()
         self.control_layout = QHBoxLayout()
         self.variable_name = "x"
+        self.variable_name_y = "Ограничение"
         self.variable_names = ["x₁", "x₂", "x₃"]
-        self.variable_naming = "Первый"
+        self.variable_names_y = ["Ограничение 1", "Ограничение 2", "Ограничение 3"]
 
         self.problem_type = "min"
         self.size_x = size_x
@@ -46,24 +46,6 @@ class LinearProblem():
         self.update_table_size()
         self.write_data_into_input_table()
 
-    # def handle_cell_changed(self, row, column):
-    #     if row != 0 or column <= 0 or column == self.size_x - 1 or self.refreshing:
-    #         return
-        
-    #     self.variable_naming = False
-    #     self.refreshing = True
-    #     self.update_input_table()
-        
-        # self.variable_names = []
-        # for col in range(1, self.table.columnCount() - 1):
-        #     item = self.table.item(0, col)
-        #     if item:
-        #         self.variable_names.append(item.text())
-        #     else:
-        #         self.variable_names.append("")
-        # self.variable_naming = False
-        # self.update_input_table()
-
     def set_top_layout(self):
         self.control_layout.setContentsMargins(5, 5, 5, 5)
         self.control_layout.setSpacing(10)
@@ -86,28 +68,39 @@ class LinearProblem():
         self.dest_spin.valueChanged.connect(self.update_input_table)
         self.dest_layout.addWidget(self.dest_spin)
 
-        self.variable_field = input_field("Название переменной", text = self.variable_name, max_length = 5)
+        self.variable_field = input_field("Название переменной", text = self.variable_name, max_length = 20)
         self.variable_field.setFixedWidth(132)
-        # self.variable_field.line.textChanged.connect(self.variable_name_changed)
+
+        self.variable_field_y = input_field("Название ограничений", text = self.variable_name_y, max_length = 20)
+        self.variable_field_y.setFixedWidth(138)
 
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
         self.variable_btn = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_y = q_push_button("Применить", constants.solve_btn)
         self.variable_btn.clicked.connect(self.variable_name_changed)
+        self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
 
+        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
         self.control_layout.addWidget(self.variable_field)
         self.control_layout.addWidget(self.variable_btn)
+        self.control_layout.addSpacing(10)
+        self.control_layout.addWidget(self.variable_field_y)
+        self.control_layout.addWidget(self.variable_btn_y)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
 
         self.group_top.setLayout(self.control_layout)
     
     def variable_name_changed(self):
-        self.variable_naming = "Общая переменная"
-        self.update_input_table()
+        self.update_input_table(refresh_names_x = True)
+    
+    def variable_name_changed_y(self):
+        self.update_input_table(refresh_names_y = True)
 
     def update_table_size(self):  
         sources = self.source_spin.value()
@@ -115,6 +108,14 @@ class LinearProblem():
 
         self.size_x = destinations
         self.size_y = sources
+
+        if len(self.variable_names) < self.size_x:
+            for i in range(len(self.variable_names), self.size_x):
+                self.variable_names.append(f"{self.variable_name}{int_to_subscript(i + 1)}")
+
+        if len(self.variable_names_y) < self.size_y:
+            for i in range(len(self.variable_names_y), self.size_y):
+                self.variable_names_y.append(f"{self.variable_name_y} {i + 1}")
 
         if len(self.function) < self.size_x:
             for i in range(self.size_x - len(self.function)):
@@ -137,37 +138,27 @@ class LinearProblem():
         for i in range(2, self.table.rowCount()):
             self.table.removeCellWidget(i, column_count - 2)
         
+        self.table.setColumnCount(destinations + 3)
         self.table.setRowCount(sources + 2)
-        self.table.setColumnCount(destinations + 2)
-        
-        for i in range(destinations + 2):
-            self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
         
         for i in range(sources + 2):
             self.table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+        
+        for i in range(destinations + 3):
+            self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
     
     def write_data_into_input_table(self):
-        self.table.setRowCount(self.size_y + 2)
-        self.table.setColumnCount(self.size_x + 2)
-
-        if self.variable_naming:            
-            to_write = [[""] + [f"{self.variable_name}{int_to_subscript(i)}" for i in range(1, self.size_x+1)] + [""]]
-            function_variable = self.variable_name
-        else:
-            to_write = [[""] + self.variable_names + [""]]
-            function_variable = "x"
+        to_write = [[""] + self.variable_names[0:self.size_x] + ["", ""]]
 
         self.variable_field.line.setText(self.variable_name)
-        to_write.append([f"F ({function_variable}) = "] + [f"{x:g}" for x in self.function[0:self.size_x]] + [""])
+        to_write.append([f"F ({self.variable_name}) = "] + [f"{x:g}" for x in self.function[0:self.size_x]] + ["", ""])
 
         for i in range(0, self.size_y):
-            this = [f"{x:g}" for x in self.costs[i][0:self.size_x]] + [self.signs[i]] + [f"{self.constraints[i]:g}"]
+            this = [self.variable_names_y[i]] + [f"{x:g}" for x in self.costs[i][0:self.size_x]] + [self.signs[i]] + [f"{self.constraints[i]:g}"]
             to_write.append(this)
         
-        print(self.variable_naming)
-        print(to_write)
         for y in range(self.size_y + 2):
-            for x in range(self.size_x + 2):
+            for x in range(self.size_x + 3):
                 if x == 0 and y == 0:
                     problem_widget = QComboBox()
                     problem_widget.addItems(["Минимизация", "Максимизация"])
@@ -188,7 +179,7 @@ class LinearProblem():
                     self.table.setCellWidget(y, x, list_widget)
                 else:
                     item = QTableWidgetItem(str(to_write[y][x]))
-                    if y == 0 or (y == 1 and x == 0): 
+                    if (y == 1 and x == 0): #y == 0 or
                         font = item.font()
                         font.setPointSize(20)
                         item.setFont(font)
@@ -197,32 +188,43 @@ class LinearProblem():
                     item.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(y, x, item)
 
-    def get_data_from_input_table(self):
+    def get_data_from_input_table(self, refresh_names_x = False, refresh_names_y = False):
         rows = self.table.rowCount()
         cols = self.table.columnCount()
 
-        if self.variable_naming != "Первый":
+        if refresh_names_x:
+            x = self.dest_spin.value()
+            self.variable_name = self.variable_field.line.text()
+            self.variable_names = [f"{self.variable_name}{int_to_subscript(i)}" for i in range(1, x + 1)]
+        else:
             new_variable_names = []
-            for col in range(1, self.table.columnCount() - 1):
+            for col in range(1, self.table.columnCount() - 2):
                 item = self.table.item(0, col)
                 if item:
-                    self.variable_names.append(item.text())
+                    new_variable_names.append(item.text())
                 else:
-                    self.variable_names.append("")  
-        
-            if self.variable_naming != "Общая переменная":
-                self.variable_naming = "Стандарт"
-                if new_variable_names != self.variable_names:
-                    self.variable_naming = False
-            
-            self.variable_names = new_variable_names
-            self.variable_name = self.variable_field.line.text()
-        
+                    new_variable_names.append("")
+            self.variable_names = combine_arrays_1d_pure(new_variable_names, self.variable_names)
+
+        if refresh_names_y:
+            y = self.source_spin.value()
+            self.variable_name_y = self.variable_field_y.line.text()
+            self.variable_names_y = [f"{self.variable_name_y} {i}" for i in range(1, y + 1)]
+        else:
+            new_variable_names_y = []
+            for row in range(2, self.table.rowCount()):
+                item = self.table.item(row, 0)
+                if item:
+                    new_variable_names_y.append(item.text())
+                else:
+                    new_variable_names_y.append("")
+            self.variable_names_y = combine_arrays_1d_pure(new_variable_names_y, self.variable_names_y)
+
         if rows < 3 or cols < 3: 
             raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
         
         sources = rows - 2
-        destinations = cols - 2
+        destinations = cols - 3
 
         if self.table.cellWidget(0, 0).currentText() != "Минимизация":
             self.problem_type = "max"
@@ -251,11 +253,10 @@ class LinearProblem():
                 self.error = "Введённое значение не является числом"
         
         new_costs = []
-        for row in range(2, sources + 2):
+        for row in range(2, rows):
             cost_row = []
-            for col in range(destinations):
+            for col in range(1, destinations + 1):
                 item = self.table.item(row, col)
-                # print(item.text())
                 try:
                     val = 0 if item.text() == "" else float(item.text())
                     cost_row.append(val)
@@ -266,12 +267,10 @@ class LinearProblem():
         self.function = combine_arrays_1d_pure(new_function, self.function)
         self.constraints = combine_arrays_1d_pure(new_constraints, self.constraints)
         self.signs = combine_arrays_1d_pure(new_signs, self.signs)
-        # print(new_costs)
-        # print(self.costs)
         self.costs = combine_arrays_pure(new_costs, self.costs)
 
-    def update_input_table(self):
-        self.get_data_from_input_table()
+    def update_input_table(self, number = 0, refresh_names_x = False, refresh_names_y = False):
+        self.get_data_from_input_table(refresh_names_x, refresh_names_y)
         self.update_table_size()
         self.write_data_into_input_table()
 
@@ -318,10 +317,7 @@ class LinearProblem():
         
         answer = [-result.fun if max else result.fun, result.x]
         
-        if self.variable_naming:
-            to_write = [[f"{self.variable_name}{int_to_subscript(i)}" for i in range(1, self.size_x+1)]]
-        else:
-            to_write = [self.variable_names]
+        to_write = [self.variable_names]
         to_write.append([])
         for i in range(self.size_x):
             to_write[1] = answer[1]
