@@ -2,10 +2,10 @@ import constants
 import functions
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QGroupBox, QSizePolicy, QStackedWidget, QMenu, QFileDialog
+    QGroupBox, QSizePolicy, QStackedWidget, QLabel, QFileDialog
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtGui import QIcon
 from LinearProblem import LinearProblem
 from TransportationProblem import TransportationProblem
 from MultiobjectiveTransportationProblem import MultiobjectiveTransportationProblem
@@ -43,6 +43,8 @@ class UserInterface(QMainWindow):
 
         self.solution_page = QWidget()
         self.create_solution_page()
+
+        # self.create_level1()
 
         self.stacked_widget.addWidget(self.main_page)
         self.stacked_widget.addWidget(self.input_page)
@@ -87,58 +89,122 @@ class UserInterface(QMainWindow):
     #     self.file_menu.addSeparator()
     #     self.file_menu.addAction(exit_action)
 
-    def open_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Открыть файл", "", "JSON Files (*.json)")
-        if file_name:
-            print(file_name)
+    # def open_file(self):
+    #     file_name, _ = QFileDialog.getOpenFileName(self, "Открыть файл", "", "JSON Files (*.json)")
+    #     if file_name:
+    #         print(file_name)
 
     def create_main_page(self):
-        main_layout = QHBoxLayout()
-        
-        bottom_layout = QHBoxLayout()
-        
-        task_type_group = QGroupBox("Тип задачи")
-        task_type_layout = QVBoxLayout()
-        task_type_layout.setAlignment(Qt.AlignTop)
-        task_type_layout.setSpacing(10)
+        main_layout = QVBoxLayout()
 
-        linear_btn = functions.q_push_button("Задача линейного программирования", "background-color: #4CAF50; color: white; padding: 8px;", 
-                                        self.show_linear_table)
-        transport_btn = functions.q_push_button("Транспортная задача", "background-color: #4CAF50; color: white; padding: 8px;", 
-                                        self.show_transportation_table)
-        assignment_btn = functions.q_push_button("Задача о назначениях", "background-color: #4CAF50; color: white; padding: 8px;", 
-                                        self.show_assignment_table)
-        multiproduct_btn = functions.q_push_button("Мультипродуктовая задача", "background-color: #4CAF50; color: white; padding: 8px;", 
-                                        self.show_multiobject_transportation_table)
-        
-        task_type_layout.addWidget(linear_btn)
-        task_type_layout.addWidget(transport_btn)
-        task_type_layout.addWidget(assignment_btn)
-        task_type_layout.addWidget(multiproduct_btn)
-        task_type_group.setLayout(task_type_layout)
-        
-        examples_group = QGroupBox("Примеры для заполнения")
-        examples_layout = QVBoxLayout()
-        examples_layout.setAlignment(Qt.AlignTop)
-        examples_layout.setSpacing(10)
+        self.create_level1()
+        self.create_level2()
 
-        for id, example in constants.examples.items():
-            btn = functions.q_push_button(example["name"], "background-color: #607D8B; color: white; padding: 8px;", 
-                                        partial(self.load_example, id))
-            examples_layout.addWidget(btn)
+        self.level2_widget.hide()
         
-        examples_group.setLayout(examples_layout)
+        # bottom_layout = QHBoxLayout()
         
-        empty_row = QWidget()
-        empty_row.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # task_type_group = QGroupBox("Тип задачи")
+        # task_type_layout = QVBoxLayout()
+        # task_type_layout.setAlignment(Qt.AlignTop)
+        # task_type_layout.setSpacing(10)
+
+        # linear_btn = functions.q_push_button("Задача линейного программирования", "background-color: #4CAF50; color: white; padding: 8px;", 
+        #                                 self.show_linear_table)
+        # transport_btn = functions.q_push_button("Транспортная задача", "background-color: #4CAF50; color: white; padding: 8px;", 
+        #                                 self.show_transportation_table)
+        # assignment_btn = functions.q_push_button("Задача о назначениях", "background-color: #4CAF50; color: white; padding: 8px;", 
+        #                                 self.show_assignment_table)
+        # multiproduct_btn = functions.q_push_button("Мультипродуктовая задача", "background-color: #4CAF50; color: white; padding: 8px;", 
+        #                                 self.show_multiobject_transportation_table)
         
-        bottom_layout.addWidget(task_type_group)
-        bottom_layout.addWidget(examples_group)
-        bottom_layout.addWidget(empty_row)        
+        # task_type_layout.addWidget(linear_btn)
+        # task_type_layout.addWidget(transport_btn)
+        # task_type_layout.addWidget(assignment_btn)
+        # task_type_layout.addWidget(multiproduct_btn)
+        # task_type_group.setLayout(task_type_layout)
         
-        main_layout.addLayout(bottom_layout)
+        # examples_group = QGroupBox("Примеры для заполнения")
+        # examples_layout = QVBoxLayout()
+        # examples_layout.setAlignment(Qt.AlignTop)
+        # examples_layout.setSpacing(10)
+
+        # for id, example in constants.examples.items():
+        #     btn = functions.q_push_button(example["name"], "background-color: #607D8B; color: white; padding: 8px;", 
+        #                                 partial(self.load_example, id))
+        #     examples_layout.addWidget(btn)
+        
+        # examples_group.setLayout(examples_layout)
+        
+        # empty_row = QWidget()
+        # empty_row.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        # bottom_layout.addWidget(task_type_group)
+        # bottom_layout.addWidget(examples_group)
+        # bottom_layout.addWidget(empty_row)        
+        
+        # main_layout.addLayout(bottom_layout)
         
         self.main_page.setLayout(main_layout)
+
+    def create_level1(self):
+        self.level1_widget = QWidget()
+        level1_layout = QVBoxLayout(self.level1_widget)
+        level1_layout.setContentsMargins(0, 0, 0, 0)
+        
+        label = QLabel("Выберите тип задачи:")
+        label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        level1_layout.addWidget(label, alignment=Qt.AlignLeft)
+        
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(20)
+        
+        categories = ["Задача линейного программирования\nстандартной формы", "Транспортная задача", "Задача о назначениях", "Многопродуктовая транспортная задача"]
+        self.category_buttons = []
+        
+        for category in categories:
+            btn = functions.q_push_button(category, constants.solve_btn)
+            btn.setFixedSize(250, 70)
+            btn.clicked.connect(lambda _, cat=category: self.show_level2(cat))
+            buttons_layout.addWidget(btn)
+            self.category_buttons.append(btn)
+        
+        level1_layout.addLayout(buttons_layout)
+        self.main_layout.addWidget(self.level1_widget, alignment=Qt.AlignTop)
+    
+    def create_level2(self):
+        self.level2_widget = QWidget()
+        level2_layout = QVBoxLayout(self.level2_widget)
+        level2_layout.setContentsMargins(0, 10, 0, 0)
+        
+        self.level2_label = QLabel()
+        self.level2_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.level2_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        level2_layout.addWidget(self.level2_label, alignment=Qt.AlignLeft)
+        
+        buttons_layout = QVBoxLayout()
+        buttons_layout.setContentsMargins(10, 0, 0, 0)
+        # buttons_layout.setSpacing(10)
+        
+        options = ["Новая задача", "Выбрать задачу", "Случайная задача"]
+        self.action_buttons = []
+        
+        for option in options:
+            btn = functions.q_push_button(option, constants.solve_btn)
+            btn.setFixedSize(200, 50)  # Фиксированный размер кнопок
+            # btn.clicked.connect(lambda _, opt=option: self.show_level3(opt))
+            buttons_layout.addWidget(btn)
+            self.action_buttons.append(btn)
+        
+        level2_layout.addLayout(buttons_layout)
+        self.main_layout.addWidget(self.level2_widget, alignment=Qt.AlignTop)
+    
+    def show_level2(self, category):
+        self.current_category = category.replace('\n', ' ')
+        self.level2_label.setText(f"Действие для задачи: {self.current_category}")
+        self.level2_widget.show()
+        # self.level3_widget.hide()
 
     def show_linear_table(self):
         self.problem_type = "ЗЛП"
