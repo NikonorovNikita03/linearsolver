@@ -158,3 +158,27 @@ def print_table(data):
     
     for row in data:
         print("  ".join(f"{str(item):<{width}}" for item, width in zip(row, col_widths)))
+
+def split_by_newline_without_word_break(text, max_line_length):
+    words = text.split()
+    lines = []
+    current_line = []
+    current_length = 0
+
+    for word in words:
+        # Проверяем, не превысит ли добавление слова максимальную длину строки
+        if current_line and current_length + len(word) + 1 > max_line_length:
+            lines.append(' '.join(current_line))
+            current_line = [word]
+            current_length = len(word)
+        else:
+            if current_line:
+                current_length += len(word) + 1  # +1 для пробела
+            else:
+                current_length = len(word)
+            current_line.append(word)
+
+    if current_line:
+        lines.append(' '.join(current_line))
+
+    return '\n'.join(lines)
