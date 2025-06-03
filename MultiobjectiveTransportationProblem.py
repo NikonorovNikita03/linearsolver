@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QHeaderView, QTableWidgetItem, QGroupBox
 )
 from PySide6.QtCore import Qt
-from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure
+from functions import q_push_button, combine_arrays_1d_pure, combine_arrays_pure, input_field
 from functions import brushes
 from solver import Solver
 class MultiobjectiveTransportationProblem():
@@ -27,6 +27,13 @@ class MultiobjectiveTransportationProblem():
         self.total_cost = 0
         self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
         self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
+
+        self.variable_name_x = "x"
+        self.variable_names_x = ["x₁", "x₂", "x₃"]
+        self.variable_name_y = "y"
+        self.variable_names_y = ["y₁", "y₂", "y₃"]
+        self.variable_names_end_x = "Поставщики"
+        self.variable_names_end_y = "Потребители"
 
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
@@ -71,11 +78,38 @@ class MultiobjectiveTransportationProblem():
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
 
+        self.variable_field_x = input_field("Название столбцов", text = self.variable_name_x, max_length = 20)
+        self.variable_field_x.setFixedWidth(132)
+        self.variable_field_y = input_field("Название строк", text = self.variable_name_y, max_length = 20)
+        self.variable_field_y.setFixedWidth(132)
+        self.variable_field_z = input_field("Название продуктов", text = "Продукт", max_length = 20)
+        self.variable_field_z.setFixedWidth(132)
+
+        self.variable_btn_x = q_push_button("Применить", constants.variant_btn)
+        # self.variable_btn_x.clicked.connect(self.variable_name_changed_x)
+        self.variable_btn_y = q_push_button("Применить", constants.variant_btn)
+        # self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
+        self.variable_btn_z = q_push_button("Применить", constants.variant_btn)
+
+        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addWidget(self.menu_btn)
+        self.control_layout.addSpacing(10)
+        self.control_layout.addWidget(self.variable_field_x)
+        self.control_layout.addWidget(self.variable_btn_x)
+        self.control_layout.addWidget(self.variable_field_y)
+        self.control_layout.addWidget(self.variable_btn_y)
+        self.control_layout.addWidget(self.variable_field_z)
+        self.control_layout.addWidget(self.variable_btn_z)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
+
+        # self.control_layout.addLayout(self.source_layout)
+        # self.control_layout.addLayout(self.dest_layout)
+        # self.control_layout.addWidget(self.menu_btn)
+        # self.control_layout.addStretch()
+        # self.control_layout.addWidget(self.solve_btn)
 
         self.group_top.setLayout(self.control_layout)
 
@@ -116,7 +150,7 @@ class MultiobjectiveTransportationProblem():
         size_x = 3 + 2 * self.size_x
         product_number = 2
 
-        self.product_names = ["A", "B"]
+        self.product_names = ["Продукт 1", "Продукт 2"]
 
         for i in range(product_number, size_x - 1, product_number):
             self.table.setSpan(0, i, 1, product_number)
@@ -174,6 +208,11 @@ class MultiobjectiveTransportationProblem():
                     item.setBackground(brushes["black"])
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 item.setTextAlignment(Qt.AlignCenter)
+
+                font = item.font()
+                font.setPointSize(17)
+                item.setFont(font)
+
                 self.table.setItem(y, x, item)
 
     def get_data_from_input_table(self):
@@ -216,7 +255,6 @@ class MultiobjectiveTransportationProblem():
                     int(item[1].text()) if item[1].text().isdigit() else 0,
                 ])
             new_costs.append(cost_row)
-
 
         self.supply = combine_arrays_1d_pure(new_supply, self.supply)
         self.demand = combine_arrays_1d_pure(new_demand, self.demand)
@@ -296,11 +334,18 @@ class MultiobjectiveTransportationProblem():
                     item.setBackground(brushes["black"])
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     
+                font = item.font()
+                font.setPointSize(16)
+                item.setFont(font)
+
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
 
         self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
         item = QTableWidgetItem(f"Общая стоимость: {constants.stringify(self.total_cost)}")
         item.setTextAlignment(Qt.AlignCenter)
+        font = item.font()
+        font.setPointSize(16)
+        item.setFont(font)
         self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))
         

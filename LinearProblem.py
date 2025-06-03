@@ -76,8 +76,8 @@ class LinearProblem():
 
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
-        self.variable_btn = q_push_button("Применить", constants.solve_btn)
-        self.variable_btn_y = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn = q_push_button("Применить", constants.variant_btn)
+        self.variable_btn_y = q_push_button("Применить", constants.variant_btn)
         self.variable_btn.clicked.connect(self.variable_name_changed)
         self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
 
@@ -181,9 +181,13 @@ class LinearProblem():
                     item = QTableWidgetItem(str(to_write[y][x]))
                     if (y == 1 and x == 0): #y == 0 or
                         font = item.font()
-                        font.setPointSize(20)
+                        font.setPointSize(16)
                         item.setFont(font)
                         item.setToolTip(str(to_write[y][x]))
+                    
+                    font = item.font()
+                    font.setPointSize(16)
+                    item.setFont(font)
 
                     item.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(y, x, item)
@@ -339,12 +343,22 @@ class LinearProblem():
                 item = QTableWidgetItem(val)
                 if y == 0: 
                     font = item.font()
-                    font.setPointSize(20)
+                    font.setPointSize(16)
                     item.setFont(font)
+
+                font = item.font()
+                font.setPointSize(16)
+                item.setFont(font)
+
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
         
         self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
         item = QTableWidgetItem(f"Экстремум функции: {constants.stringify(answer[0])}")
         item.setTextAlignment(Qt.AlignCenter)
+
+        font = item.font()
+        font.setPointSize(16)
+        item.setFont(font)
+
         self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))

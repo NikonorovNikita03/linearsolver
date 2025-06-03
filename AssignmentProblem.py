@@ -72,9 +72,9 @@ class AssignmentProblem():
         self.variable_field_y = input_field("Название строк", text = self.variable_name_y, max_length = 20)
         self.variable_field_y.setFixedWidth(132)
 
-        self.variable_btn_x = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_x = q_push_button("Применить", constants.variant_btn)
         self.variable_btn_x.clicked.connect(self.variable_name_changed_x)
-        self.variable_btn_y = q_push_button("Применить", constants.solve_btn)
+        self.variable_btn_y = q_push_button("Применить", constants.variant_btn)
         self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
 
         self.control_layout.addWidget(self.menu_btn)
@@ -139,6 +139,11 @@ class AssignmentProblem():
             for x in range(destinations + 1):
                 item = QTableWidgetItem(str(to_write[y][x]))
                 item.setTextAlignment(Qt.AlignCenter)
+
+                font = item.font()
+                font.setPointSize(16)
+                item.setFont(font)
+
                 self.table.setItem(y, x, item)
 
     def get_data_from_input_table(self, refresh_names_x, refresh_names_y):
@@ -230,9 +235,17 @@ class AssignmentProblem():
                     val = str(val)
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
+
+                font = item.font()
+                font.setPointSize(16)
+                item.setFont(font)
+
                 self.solution_table.setItem(y, x, item)
 
         self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
         item = QTableWidgetItem(f"Общая стоимость: {constants.stringify(self.total_cost)}")
         item.setTextAlignment(Qt.AlignCenter)
+        font = item.font()
+        font.setPointSize(16)
+        item.setFont(font)
         self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))

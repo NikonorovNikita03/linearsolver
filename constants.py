@@ -18,6 +18,21 @@ solve_btn = """
                 padding: 8px;
                 margin-top: 18px;
                 width: 60px;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """
+
+variant_btn = """
+            QPushButton {
+                background-color: #4CAF50; 
+                color: white; 
+                padding: 8px;
+                margin-top: 18px;
+                width: 60px;
+                font-size: 12px;
             }
             QPushButton:hover {
                 background-color: #45a049;

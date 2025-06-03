@@ -16,7 +16,7 @@ from AssignmentProblem import AssignmentProblem
 class UserInterface(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Решение транспортных задач линейного программирования")
+        self.setWindowTitle("Инструментарий для решения задач линейного программирования")
         self.page = "main"
         self.problem_type = ""
         self.setGeometry(100, 100, 1366, 768)
@@ -73,7 +73,7 @@ class UserInterface(QMainWindow):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(20)
         
-        categories = ["Задача линейного программирования\nстандартной формы", "Транспортная задача", "Задача о назначениях", "Многопродуктовая транспортная задача"]
+        categories = ["Каноническая задача\nлинейного программирования", "Транспортная задача", "Задача о назначениях", "Многопродуктовая\nтранспортная задача"]
         self.category_buttons = []
         
         for category in categories:
@@ -141,10 +141,9 @@ class UserInterface(QMainWindow):
         
         self.button_texts = {}
         # problem_types = ["ЗЛП", "Транспортная задача", "Задача о назначениях", "Многопродуктовая транспортная задача"]
-        problems = {"ЗЛП": [], "Транспортная задача": [], "Задача о назначениях": [], "Многопродуктовая транспортная задача": []}
-        for pt in problems:
-            problems[pt] = self.pdb.get_all_problems(pt)
-        print(problems)
+        self.problems = {"Каноническая задача линейного программирования": [], "Транспортная задача": [], "Задача о назначениях": [], "Многопродуктовая транспортная задача": []}
+        for pt in self.problems:
+            self.problems[pt] = self.pdb.get_all_problems(pt)
         # linear_problems = self.pdb.get_all_problems("ЗЛП")
         # transport_problems = self.pdb.get_all_problems("Транспортная задача")
         # assignment_problems = self.pdb.get_all_problems("Задача о назначениях")
@@ -152,14 +151,23 @@ class UserInterface(QMainWindow):
 
         self.stacked_btns = QStackedWidget()
 
-        for problem in problems["ЗЛП"]:
-            self.button_texts[problem['name']] = problem['problem_text']
+        for problem in self.problems["Каноническая задача линейного программирования"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Транспортная задача"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Задача о назначениях"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Многопродуктовая транспортная задача"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+
+        for i in range(24):
+            self.button_texts[f"Каноническая задача линейного программирования. Вариант {i+2}"] = "ss"
         
         for btn_text, display_text in self.button_texts.items():
             btn_text = functions.split_by_newline_without_word_break(btn_text, 30)
             lines = btn_text.count('\n') + 1
-            button = functions.q_push_button(btn_text, constants.solve_btn)
-            button.setFixedSize(200, 20 + 20 * lines)
+            button = functions.q_push_button(btn_text, constants.variant_btn)
+            button.setFixedSize(200, 25 + 20 * lines)
             button.clicked.connect(lambda checked, text=display_text: self.show_text(text))
             buttons_layout.addWidget(button)
         
@@ -184,7 +192,7 @@ class UserInterface(QMainWindow):
         
         self.confirm_btn = functions.q_push_button("Подтвердить", constants.solve_btn)
         self.confirm_btn.setFixedSize(150, 60)
-        self.confirm_btn.clicked.connect(lambda: print("Задача подтверждена"))
+        self.confirm_btn.clicked.connect(self.load_example)
         self.confirm_btn.hide()
         
         text_container_layout.addWidget(self.text_display)
@@ -207,7 +215,8 @@ class UserInterface(QMainWindow):
         self.level3_widget.hide()
     
     def show_text(self, text):
-        self.text_display.setText(text)
+        self.problem_id = text[0]
+        self.text_display.setText(text[1])
         self.confirm_btn.show()
     
     def show_level2(self, category):
@@ -240,45 +249,56 @@ class UserInterface(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.main_page)
         self.page = "main"
     
-    def load_example(self, id):
-        problem = constants.examples[id]
-        self.problem_type = problem["type"]
-        match problem["type"]:
+    def load_example(self):
+        # problem = constants.examples[id]
+        # self.problem_type = problem["type"]
+        print(self.problem_type)
+        print(self.problem_id)
+        # print(self.problems)
+        
+        match self.problem_type:
             case "Транспортная задача":
-                self.transportation_problem.source_spin.setValue(len(problem["data"]["costs"]))
-                self.transportation_problem.dest_spin.setValue(len(problem["data"]["costs"][0]))
-                self.transportation_problem.costs = problem["data"]["costs"]
-                self.transportation_problem.supply = problem["data"]["supply"]
-                self.transportation_problem.demand = problem["data"]["demand"]                
-                self.transportation_problem.variable_names_x = problem["data"]["names_x"]
-                self.transportation_problem.variable_names_y = problem["data"]["names_y"]
+                problem = self.problems["Транспортная задача"][self.problem_id]
+                self.transportation_problem.source_spin.setValue(len(problem["costs"]))
+                self.transportation_problem.dest_spin.setValue(len(problem["costs"][0]))
+                self.transportation_problem.costs = problem["costs"]
+                self.transportation_problem.supply = problem["supply"]
+                self.transportation_problem.demand = problem["demand"]                
+                self.transportation_problem.variable_names_x = problem["names_x"]
+                self.transportation_problem.variable_names_y = problem["names_y"]
                 self.transportation_problem.update_table_size()
                 self.transportation_problem.write_data_into_input_table()
             case "Задача о назначениях":
-                self.assignment_problem.source_spin.setValue(len(problem["data"]["costs"]))
-                self.assignment_problem.dest_spin.setValue(len(problem["data"]["costs"][0]))
-                self.assignment_problem.costs = problem["data"]["costs"]
-                self.assignment_problem.variable_names_x = problem["data"]["names_x"]
-                self.assignment_problem.variable_names_y = problem["data"]["names_y"]
+                problem = self.problems["Задача о назначениях"][self.problem_id]
+                self.assignment_problem.source_spin.setValue(len(problem["costs"]))
+                self.assignment_problem.dest_spin.setValue(len(problem["costs"][0]))
+                self.assignment_problem.costs = problem["costs"]
+                self.assignment_problem.variable_names_x = problem["names_x"]
+                self.assignment_problem.variable_names_y = problem["names_y"]
                 self.assignment_problem.update_table_size()
                 self.assignment_problem.write_data_into_input_table()
             case "Многопродуктовая транспортная задача":
-                self.multiobject_transportation_problem.source_spin.setValue(problem["data"]["size_y"])
-                self.multiobject_transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
-                self.multiobject_transportation_problem.costs = problem["data"]["costs"]
-                self.multiobject_transportation_problem.supply = problem["data"]["supply"]
-                self.multiobject_transportation_problem.demand = problem["data"]["demand"]               
+                problem = self.problems["Многопродуктовая транспортная задача"][self.problem_id]
+                self.multiobject_transportation_problem.source_spin.setValue(len(problem["supply"]))
+                self.multiobject_transportation_problem.dest_spin.setValue(len(problem["demand"]))
+                # self.multiobject_transportation_problem.source_spin.setValue(problem["data"]["size_y"])
+                # self.multiobject_transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
+                self.multiobject_transportation_problem.costs = problem["costs"]
+                self.multiobject_transportation_problem.supply = problem["supply"]
+                self.multiobject_transportation_problem.demand = problem["demand"]               
+                self.assignment_problem.update_table_size()
                 self.multiobject_transportation_problem.write_data_into_input_table()
-            case _:
-                self.linear_problem.source_spin.setValue(len(problem["data"]["constraints"]))
-                self.linear_problem.dest_spin.setValue(len(problem["data"]["function"]))
-                self.linear_problem.problem_type = problem["data"]["problem_type"]
-                self.linear_problem.costs = problem["data"]["costs"]
-                self.linear_problem.function = problem["data"]["function"]
-                self.linear_problem.constraints = problem["data"]["constraints"]                
-                self.linear_problem.signs = problem["data"]["signs"]
-                self.linear_problem.variable_names = problem["data"]["names_x"]
-                self.linear_problem.variable_names_y = problem["data"]["names_y"]
+            case "Каноническая задача линейного программирования":
+                problem = self.problems["Каноническая задача линейного программирования"][self.problem_id]
+                self.linear_problem.source_spin.setValue(len(problem["constraints"]))
+                self.linear_problem.dest_spin.setValue(len(problem["function"]))
+                self.linear_problem.problem_type = problem["problem_type"]
+                self.linear_problem.costs = problem["costs"]
+                self.linear_problem.function = problem["function"]
+                self.linear_problem.constraints = problem["constraints"]                
+                self.linear_problem.signs = problem["signs"]
+                self.linear_problem.variable_names = problem["names_x"]
+                self.linear_problem.variable_names_y = problem["names_y"]
                 self.linear_problem.update_table_size()
                 self.linear_problem.write_data_into_input_table()
         self.show_input_page()
@@ -376,15 +396,24 @@ class UserInterface(QMainWindow):
             # self.export_solution_to_csv
         )
 
+        copy_btn = functions.q_push_button(
+            "Копировать",
+            constants.variant_btn, 
+            self.show_input_page
+        )
+
         back_btn = functions.q_push_button(
             "Назад",
             constants.solve_btn, 
             self.show_input_page
         )
+
+        copy_btn.setFixedSize(85, 55)
         
         # btn_layout.addWidget(solution_copy_btn)
         # btn_layout.addWidget(self.export_csv_btn)
         btn_layout.addStretch()
+        btn_layout.addWidget(copy_btn)
         btn_layout.addWidget(back_btn)
 
         solution_layout.addWidget(self.solution_table)

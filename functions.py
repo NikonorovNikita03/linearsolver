@@ -65,14 +65,7 @@ def q_push_button(name, style="", function = None, cursor=True):
         btn.setCursor(Qt.PointingHandCursor)
     return btn
 
-def input_field(label_text, placeholder=None, text=None, max_length=None, spacing=0):
-    container = QWidget()
-    container_layout = QVBoxLayout(container)
-    container_layout.setContentsMargins(0, 0, 0, 0)
-    container_layout.setSpacing(spacing)
-    
-    label = QLabel(label_text)
-    label.setStyleSheet("""
+input_label_style = """
         QLabel {
             color: #333333;
             font-size: 12px;
@@ -80,7 +73,28 @@ def input_field(label_text, placeholder=None, text=None, max_length=None, spacin
             margin: 0;
             padding: 0;
         }
-    """)
+    """
+input_line_edit_style = """
+        QLineEdit {
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-size: 14px;
+            margin: 0;
+        }
+        QLineEdit:focus {
+            border: 1px solid #0066ff;
+        }
+    """
+
+def input_field(label_text, placeholder=None, text=None, max_length=None, spacing=0):
+    container = QWidget()
+    container_layout = QVBoxLayout(container)
+    container_layout.setContentsMargins(0, 0, 0, 0)
+    container_layout.setSpacing(spacing)
+    
+    label = QLabel(label_text)
+    label.setStyleSheet(input_label_style)
     label.setContentsMargins(0, 0, 0, 0)
     
     line_edit = QLineEdit()
@@ -94,18 +108,7 @@ def input_field(label_text, placeholder=None, text=None, max_length=None, spacin
     if max_length is not None:
         line_edit.setMaxLength(max_length)
     
-    line_edit.setStyleSheet("""
-        QLineEdit {
-            border: 1px solid #cccccc;
-            border-radius: 4px;
-            padding: 4px 6px;
-            font-size: 14px;
-            margin: 0;
-        }
-        QLineEdit:focus {
-            border: 1px solid #0066ff;
-        }
-    """)
+    line_edit.setStyleSheet(input_line_edit_style)
     line_edit.setContentsMargins(0, 0, 0, 0)
     
     container_layout.addWidget(label)

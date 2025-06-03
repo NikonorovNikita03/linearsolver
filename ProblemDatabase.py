@@ -62,7 +62,7 @@ class ProblemDatabase:
 
     def _get_table_name(self, problem_type: str) -> str:
         table_map = {
-            "ЗЛП": "linear_programming_problems",
+            "Каноническая задача линейного программирования": "linear_programming_problems",
             "Задача о назначениях": "assignment_problems",
             "Транспортная задача": "transport_problems",
             "Многопродуктовая транспортная задача": "multi_transport_problems"
@@ -79,7 +79,7 @@ class ProblemDatabase:
             return False
 
         try:
-            if problem_type == "ЗЛП":
+            if problem_type == "Каноническая задача линейного программирования":
                 self.cursor.execute(
                     """INSERT INTO linear_programming_problems 
                     (id, name, problem_text, problem_type, costs_json, constraints_json, 
@@ -155,7 +155,7 @@ class ProblemDatabase:
             return None
 
         try:
-            if problem_type == "ЗЛП":
+            if problem_type == "Каноническая задача линейного программирования":
                 self.cursor.execute(
                     """SELECT name, problem_text, problem_type, costs_json, constraints_json, 
                     signs_json, function_json, names_x_json, names_y_json
@@ -252,7 +252,7 @@ class ProblemDatabase:
             return False
 
         try:
-            if problem_type == "ЗЛП":
+            if problem_type == "Каноническая задача линейного программирования":
                 self.cursor.execute(
                     """UPDATE linear_programming_problems 
                     SET name = ?, problem_text = ?, problem_type = ?, costs_json = ?, 
@@ -344,11 +344,12 @@ class ProblemDatabase:
 
         try:
             self.cursor.execute(f"SELECT id, name, problem_text FROM {table_name}")
-            problems = []
+            problems = {}
             for problem_id, name, problem_text in self.cursor.fetchall():
                 problem = self.read_problem(problem_id, problem_type)
                 if problem:
-                    problems.append(problem)
+                    problems[problem['id']] = problem
+                    # problems.append(problem)
             return problems
         except sqlite3.Error as e:
             print(f"Database error: {e}")
