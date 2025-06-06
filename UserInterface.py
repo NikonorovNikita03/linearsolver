@@ -159,9 +159,6 @@ class UserInterface(QMainWindow):
             self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
         for problem in self.problems["Многопродуктовая транспортная задача"].values():
             self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-
-        for i in range(24):
-            self.button_texts[f"Каноническая задача линейного программирования. Вариант {i+2}"] = "ss"
         
         for btn_text, display_text in self.button_texts.items():
             btn_text = functions.split_by_newline_without_word_break(btn_text, 30)
@@ -250,15 +247,13 @@ class UserInterface(QMainWindow):
         self.page = "main"
     
     def load_example(self):
-        # problem = constants.examples[id]
-        # self.problem_type = problem["type"]
+        print(self.problems)
         print(self.problem_type)
-        print(self.problem_id)
-        # print(self.problems)
-        
         match self.problem_type:
             case "Транспортная задача":
                 problem = self.problems["Транспортная задача"][self.problem_id]
+                print(problem)
+                print(self.problem_id)
                 self.transportation_problem.source_spin.setValue(len(problem["costs"]))
                 self.transportation_problem.dest_spin.setValue(len(problem["costs"][0]))
                 self.transportation_problem.costs = problem["costs"]

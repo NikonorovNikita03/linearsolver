@@ -23,7 +23,6 @@ class TransportationProblem():
         self.supply_labels =  [f"Поставщик {x}" for x in range(1, self.size_y + 1)] + ["Потребители"]
         self.demand_labels = [f"Потребитель {x}" for x in range(1, self.size_x + 1)] + ["Поставщики"]
 
-
         self.variable_name_x = "x"
         self.variable_names_x = ["x₁", "x₂", "x₃"]
         self.variable_name_y = "y"
@@ -233,17 +232,12 @@ class TransportationProblem():
         destinations = len(result_matrix[0]) if sources > 0 else 0
 
         to_write = [[""] + self.variable_names_x[0:self.size_x]]
-        # to_write = [[""] + self.demand_labels[0:self.size_x]]
-
-        # print(result_matrix)
-        # print(self.size_x)
 
         if destinations > self.size_x:
             to_write[0].append("Фиктивный потребитель")
 
         for i in range(0, self.size_y):
             this = [self.variable_names_y[i]] + result_matrix[i].tolist()
-            # this = [self.supply_labels[i]] + result_matrix[i].tolist()
             to_write.append(this)
     
         if sources > self.size_y:
@@ -263,6 +257,7 @@ class TransportationProblem():
                 val = to_write[y][x]
                 if isinstance(val, float):
                     val = "{0:g}".format(val)
+                val = val.replace('-', '')
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
 
