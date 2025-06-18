@@ -11,6 +11,7 @@ from LinearProblem import LinearProblem
 from TransportationProblem import TransportationProblem
 from MultiobjectiveTransportationProblem import MultiobjectiveTransportationProblem
 from AssignmentProblem import AssignmentProblem
+from random import randint
 
 
 class UserInterface(QMainWindow):
@@ -117,7 +118,7 @@ class UserInterface(QMainWindow):
         buttons_layout.addWidget(btn_pick_problem)
 
         btn_rand_problem = functions.q_push_button("Случайная задача", constants.solve_btn)
-        btn_rand_problem.clicked.connect(lambda _, opt="СЗ": self.show_level3(opt))
+        btn_rand_problem.clicked.connect(lambda _, opt="СЗ": self.random_problem(opt))
         btn_rand_problem.setFixedSize(200, 50)
         buttons_layout.addWidget(btn_rand_problem)
 
@@ -128,6 +129,12 @@ class UserInterface(QMainWindow):
         level2_container_layout.addWidget(self.level3_widget, stretch=1)
 
         self.main_layout.addWidget(self.level2_widget, stretch=1)
+
+    def random_problem(self, opt):
+        self.problem_id = randint(1, 25)
+        self.show_level3(opt)
+        prob = self.problems[self.problem_type][self.problem_id]
+        self.show_text([prob['id'], prob['problem_text']])
 
     def create_level3(self):
         self.level3_widget = QWidget()

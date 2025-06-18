@@ -314,7 +314,6 @@ class MultiobjectiveTransportationProblem():
         demand_counter = 0
 
         to_write[-1][1] = ""
-        
         for y in range(size_y - 1):
             for x in range(size_x - 1):
                 val = to_write[y][x]

@@ -209,9 +209,6 @@ class ProblemDatabase:
                     return None
                 
                 name, problem_text, costs, supply, demand, names_x, names_y = row
-                print(problem_id)
-                print(costs)
-                print(len(costs))
                 return {
                     "id": problem_id,
                     "name": name,
