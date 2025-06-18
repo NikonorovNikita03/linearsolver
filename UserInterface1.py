@@ -134,72 +134,44 @@ class UserInterface(QMainWindow):
         problem_layout = QHBoxLayout(self.level3_widget)
         problem_layout.setContentsMargins(20, 17, 0, 0)
         
-        # buttons_widget = QWidget()
-        # buttons_layout = QVBoxLayout(buttons_widget)
-        # buttons_layout.setContentsMargins(0, 0, 0, 0)
-        # buttons_layout.setSpacing(0)
-
+        buttons_widget = QWidget()
+        buttons_layout = QVBoxLayout(buttons_widget)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(0)
         
-        # self.button_texts = {}
+        self.button_texts = {}
         # problem_types = ["ЗЛП", "Транспортная задача", "Задача о назначениях", "Многопродуктовая транспортная задача"]
         self.problems = {"Каноническая задача линейного программирования": [], "Транспортная задача": [], "Задача о назначениях": [], "Многопродуктовая транспортная задача": []}
         for pt in self.problems:
             self.problems[pt] = self.pdb.get_all_problems(pt)
-
-        self.buttons_stacked_widget = QStackedWidget()
-        self.btn_widgets = {}
-        for pt in self.problems:
-            self.btn_widgets[pt] = QWidget()
-            btn_layout = QVBoxLayout(self.btn_widgets[pt])
-            btn_layout.setContentsMargins(0, 0, 0, 0)
-            btn_layout.setSpacing(0)
-
-            for problem in self.problems[pt].values():
-                btn_text = functions.split_by_newline_without_word_break(problem['name'], 30)
-                lines = btn_text.count('\n') + 1
-                button = functions.q_push_button(btn_text, constants.variant_btn)
-                button.setFixedSize(200, 25 + 20 * lines)
-                button.clicked.connect(lambda checked, text=(problem['id'], problem['problem_text']): self.show_text(text))
-                btn_layout.addWidget(button)
-                btn_layout.addStretch()
-
-            self.buttons_stacked_widget.addWidget(self.btn_widgets[pt])    
-
-
         # linear_problems = self.pdb.get_all_problems("ЗЛП")
         # transport_problems = self.pdb.get_all_problems("Транспортная задача")
         # assignment_problems = self.pdb.get_all_problems("Задача о назначениях")
         # mutlitransport_problems = self.pdb.get_all_problems("Многопродуктовая транспортная задача")
 
+        self.stacked_btns = QStackedWidget()
 
-
-        # for problem in self.problems["Каноническая задача линейного программирования"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-        #     btn_text = functions.split_by_newline_without_word_break(problem['name'], 30)
-        #     lines = btn_text.count('\n') + 1
-        #     button = functions.q_push_button(btn_text, constants.variant_btn)
-        #     button.setFixedSize(200, 25 + 20 * lines)
-        #     button.clicked.connect(lambda checked, text=(problem['id'], problem['problem_text']): self.show_text(text))
-        #     buttons_layout.addWidget(button)
-        # for problem in self.problems["Транспортная задача"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-        # for problem in self.problems["Задача о назначениях"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-        # for problem in self.problems["Многопродуктовая транспортная задача"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Каноническая задача линейного программирования"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Транспортная задача"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Задача о назначениях"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
+        for problem in self.problems["Многопродуктовая транспортная задача"].values():
+            self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
         
-        # for btn_text, display_text in self.button_texts.items():
-        #     btn_text = functions.split_by_newline_without_word_break(btn_text, 30)
-        #     lines = btn_text.count('\n') + 1
-        #     button = functions.q_push_button(btn_text, constants.variant_btn)
-        #     button.setFixedSize(200, 25 + 20 * lines)
-        #     button.clicked.connect(lambda checked, text=display_text: self.show_text(text))
-        #     buttons_layout.addWidget(button)
+        for btn_text, display_text in self.button_texts.items():
+            btn_text = functions.split_by_newline_without_word_break(btn_text, 30)
+            lines = btn_text.count('\n') + 1
+            button = functions.q_push_button(btn_text, constants.variant_btn)
+            button.setFixedSize(200, 25 + 20 * lines)
+            button.clicked.connect(lambda checked, text=display_text: self.show_text(text))
+            buttons_layout.addWidget(button)
         
-        # buttons_layout.addStretch()
+        buttons_layout.addStretch()
         
         buttons_scroll = QScrollArea()
-        buttons_scroll.setWidget(self.buttons_stacked_widget)
+        buttons_scroll.setWidget(buttons_widget)
         buttons_scroll.setWidgetResizable(True)
         buttons_scroll.setFrameShape(QFrame.NoFrame)
         buttons_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -252,7 +224,6 @@ class UserInterface(QMainWindow):
         self.confirm_btn.hide()
     
     def show_level3(self, category):
-        self.buttons_stacked_widget.setCurrentWidget(self.btn_widgets[self.problem_type])
         self.level3_widget.show()
 
     def show_linear_table(self):
@@ -279,6 +250,8 @@ class UserInterface(QMainWindow):
         match self.problem_type:
             case "Транспортная задача":
                 problem = self.problems["Транспортная задача"][self.problem_id]
+                print(problem)
+                print(self.problem_id)
                 self.transportation_problem.source_spin.setValue(len(problem["costs"]))
                 self.transportation_problem.dest_spin.setValue(len(problem["costs"][0]))
                 self.transportation_problem.costs = problem["costs"]
