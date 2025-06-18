@@ -3,7 +3,7 @@ import functions
 from ProblemDatabase import ProblemDatabase
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
-    QGroupBox, QSizePolicy, QStackedWidget, QLabel, QFrame
+    QGroupBox, QSizePolicy, QStackedWidget, QLabel, QFrame, QApplication
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
@@ -60,6 +60,50 @@ class UserInterface(QMainWindow):
         self.level2_widget.hide()
         
         self.main_page.setLayout(self.main_layout)
+    
+    def copy_solution_to_clipboard(self):
+        
+        # Получаем текущую таблицу решения
+        current_table = self.solution_table.currentWidget()
+        
+        if not current_table:
+            return
+        
+        # Собираем данные из таблицы
+        rows = current_table.rowCount()
+        cols = current_table.columnCount()
+        
+        data = []
+        for row in range(rows):
+            row_data = []
+            for col in range(cols):
+                item = current_table.item(row, col)
+                if item:
+                    row_data.append(item.text())
+                else:
+                    if current_table.item(row, col) is None:
+                        found = False
+                        for r in range(row, -1, -1):
+                            for c in range(col, -1, -1):
+                                if current_table.item(r, c) and \
+                                (r + current_table.rowSpan(r, c) > row) and \
+                                (c + current_table.columnSpan(r, c) > col):
+                                    item = current_table.item(r, c)
+                                    row_data.append(item.text())
+                                    found = True
+                                    break
+                            if found:
+                                break
+                        if not found:
+                            row_data.append("")
+                    else:
+                        row_data.append("")
+            data.append(row_data)
+        
+        text = "\n".join(["\t".join(row) for row in data if any(cell.strip() for cell in row)])
+        
+        clipboard = QApplication.clipboard()
+        clipboard.setText(text)
 
     def create_level1(self):
         self.level1_widget = QWidget()
@@ -410,23 +454,11 @@ class UserInterface(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(5, 5, 5, 5)
         btn_layout.setSpacing(10)
-        
-        solution_copy_btn = functions.q_push_button(
-            "Копировать решение", 
-            constants.solution_copy_btn_ss, 
-            # lambda: self.copy_table_data(self.solution_table)
-        )
-        
-        self.export_csv_btn = functions.q_push_button(
-            "Выгрузить CSV", 
-            constants.export_csv_btn_ss, 
-            # self.export_solution_to_csv
-        )
 
         copy_btn = functions.q_push_button(
             "Копировать",
             constants.variant_btn, 
-            self.show_input_page
+            self.copy_solution_to_clipboard
         )
 
         back_btn = functions.q_push_button(
@@ -437,8 +469,6 @@ class UserInterface(QMainWindow):
 
         copy_btn.setFixedSize(85, 55)
         
-        # btn_layout.addWidget(solution_copy_btn)
-        # btn_layout.addWidget(self.export_csv_btn)
         btn_layout.addStretch()
         btn_layout.addWidget(copy_btn)
         btn_layout.addWidget(back_btn)
