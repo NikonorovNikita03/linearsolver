@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QGroupBox, QSizePolicy, QStackedWidget, QLabel, QFrame, QApplication
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QFont
 from LinearProblem import LinearProblem
 from TransportationProblem import TransportationProblem
 from MultiobjectiveTransportationProblem import MultiobjectiveTransportationProblem
@@ -20,10 +20,19 @@ class UserInterface(QMainWindow):
         self.setWindowTitle("Инструментарий для решения задач линейного программирования")
         self.page = "main"
         self.problem_type = ""
-        self.setGeometry(100, 100, 1366, 768)
+        self.setGeometry(100, 100, 656, 480)
+        self.size_modifier = 0
 
         self.pdb = ProblemDatabase()
         
+        self.font_small = QFont()
+        self.font_small.setPointSize(7)
+        
+        self.font_medium = QFont()
+        self.font_medium.setPointSize(10)
+
+        self.mode = "big"
+
         self.icon = QIcon()
         self.icon.addFile(functions.resource_path('images/calculator.svg'))
         self.setWindowIcon(self.icon)
@@ -51,6 +60,40 @@ class UserInterface(QMainWindow):
 
         self.central_layout.addWidget(self.stacked_widget)
 
+        self.resize()
+
+    def resize(self):
+        width = self.width()
+        print(width)
+
+        if width < 950 and self.mode == "big":
+            self.mode = "small"
+            for btn in self.category_buttons:
+                btn.setFixedSize(145, 60)
+                btn.setFont(self.font_small)
+                
+            for btn in self.var_btns:
+                btn.setFixedSize(90, 50)
+                btn.setFont(self.font_small)
+            self.buttons_scroll.setFixedWidth(120)
+            self.text_display.setStyleSheet("QLabel {font-size: 15px;}")
+            self.type_buttons_layout.setSpacing(10)
+        if width >= 950 and self.mode == "small":
+            self.mode = "big"
+            for btn in self.category_buttons:
+                btn.setFixedSize(205, 70)   
+                btn.setFont(self.font_medium)
+            
+            for btn in self.var_btns:
+                btn.setFixedSize(160, 50)
+                btn.setFont(self.font_medium)
+            self.buttons_scroll.setFixedWidth(200)
+            self.text_display.setStyleSheet("QLabel {font-size: 20px;}")
+            self.type_buttons_layout.setSpacing(20)
+
+    def resizeEvent(self, event):
+        self.resize()
+
     def create_main_page(self):
         self.main_layout = QVBoxLayout()
 
@@ -62,14 +105,11 @@ class UserInterface(QMainWindow):
         self.main_page.setLayout(self.main_layout)
     
     def copy_solution_to_clipboard(self):
-        
-        # Получаем текущую таблицу решения
         current_table = self.solution_table.currentWidget()
         
         if not current_table:
             return
         
-        # Собираем данные из таблицы
         rows = current_table.rowCount()
         cols = current_table.columnCount()
         
@@ -115,20 +155,21 @@ class UserInterface(QMainWindow):
         label.setStyleSheet("font-size: 16px; font-weight: bold;")
         level1_layout.addWidget(label, alignment=Qt.AlignLeft)
         
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(20)
+        self.type_buttons_layout = QHBoxLayout()
+        self.type_buttons_layout.setSpacing(20)
         
         categories = ["Каноническая задача\nлинейного программирования", "Транспортная задача", "Задача о назначениях", "Многопродуктовая\nтранспортная задача"]
+        
         self.category_buttons = []
         
         for category in categories:
             btn = functions.q_push_button(category, constants.solve_btn)
-            btn.setFixedSize(250, 70)
+            btn.setFixedSize(200, 70)
             btn.clicked.connect(lambda _, cat=category: self.show_level2(cat))
-            buttons_layout.addWidget(btn)
+            self.type_buttons_layout.addWidget(btn)
             self.category_buttons.append(btn)
         
-        level1_layout.addLayout(buttons_layout)
+        level1_layout.addLayout(self.type_buttons_layout)
         self.main_layout.addWidget(self.level1_widget, stretch=0, alignment=Qt.AlignTop)
     
     def create_level2(self):
@@ -152,27 +193,30 @@ class UserInterface(QMainWindow):
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         level2_container_layout.addWidget(buttons_widget, stretch=0)
 
+        self.pick_buttons = []
+
         btn_new_problem = functions.q_push_button("Новая задача", constants.solve_btn, self.show_input_page)
-        btn_new_problem.setFixedSize(200, 50)
-        buttons_layout.addWidget(btn_new_problem)
+        self.pick_buttons.append(btn_new_problem)
 
         btn_pick_problem = functions.q_push_button("Выбрать задачу", constants.solve_btn)
         btn_pick_problem.clicked.connect(lambda _, opt="ВЗ": self.show_level3(opt))
-        btn_pick_problem.setFixedSize(200, 50)
-        buttons_layout.addWidget(btn_pick_problem)
+        self.pick_buttons.append(btn_pick_problem)
 
         btn_rand_problem = functions.q_push_button("Случайная задача", constants.solve_btn)
         btn_rand_problem.clicked.connect(lambda _, opt="СЗ": self.random_problem(opt))
-        btn_rand_problem.setFixedSize(200, 50)
-        buttons_layout.addWidget(btn_rand_problem)
+        self.pick_buttons.append(btn_rand_problem)
+
+        for btn in self.pick_buttons:
+            btn.setFixedSize(135, 55)
+            buttons_layout.addWidget(btn)
 
         buttons_layout.addStretch()
 
         self.create_level3()
 
-        level2_container_layout.addWidget(self.level3_widget, stretch=1)
+        level2_container_layout.addWidget(self.level3_widget, stretch=0)
 
-        self.main_layout.addWidget(self.level2_widget, stretch=1)
+        self.main_layout.addWidget(self.level2_widget, stretch=0)
 
     def random_problem(self, opt):
         self.problem_id = randint(1, 25)
@@ -185,20 +229,13 @@ class UserInterface(QMainWindow):
         problem_layout = QHBoxLayout(self.level3_widget)
         problem_layout.setContentsMargins(20, 17, 0, 0)
         
-        # buttons_widget = QWidget()
-        # buttons_layout = QVBoxLayout(buttons_widget)
-        # buttons_layout.setContentsMargins(0, 0, 0, 0)
-        # buttons_layout.setSpacing(0)
-
-        
-        # self.button_texts = {}
-        # problem_types = ["ЗЛП", "Транспортная задача", "Задача о назначениях", "Многопродуктовая транспортная задача"]
         self.problems = {"Каноническая задача линейного программирования": [], "Транспортная задача": [], "Задача о назначениях": [], "Многопродуктовая транспортная задача": []}
         for pt in self.problems:
             self.problems[pt] = self.pdb.get_all_problems(pt)
 
         self.buttons_stacked_widget = QStackedWidget()
         self.btn_widgets = {}
+        self.var_btns = []
         for pt in self.problems:
             self.btn_widgets[pt] = QWidget()
             btn_layout = QVBoxLayout(self.btn_widgets[pt])
@@ -207,54 +244,21 @@ class UserInterface(QMainWindow):
 
             for problem in self.problems[pt].values():
                 btn_text = functions.split_by_newline_without_word_break(problem['name'], 30)
-                lines = btn_text.count('\n') + 1
                 button = functions.q_push_button(btn_text, constants.variant_btn)
-                button.setFixedSize(200, 25 + 20 * lines)
                 button.clicked.connect(lambda checked, text=(problem['id'], problem['problem_text']): self.show_text(text))
-                btn_layout.addWidget(button)
+                button.setFixedSize(140, 50)
+                self.var_btns.append(button)
+                btn_layout.addWidget(button, alignment=Qt.AlignmentFlag.AlignHCenter)
                 btn_layout.addStretch()
 
             self.buttons_stacked_widget.addWidget(self.btn_widgets[pt])    
-
-
-        # linear_problems = self.pdb.get_all_problems("ЗЛП")
-        # transport_problems = self.pdb.get_all_problems("Транспортная задача")
-        # assignment_problems = self.pdb.get_all_problems("Задача о назначениях")
-        # mutlitransport_problems = self.pdb.get_all_problems("Многопродуктовая транспортная задача")
-
-
-
-        # for problem in self.problems["Каноническая задача линейного программирования"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-        #     btn_text = functions.split_by_newline_without_word_break(problem['name'], 30)
-        #     lines = btn_text.count('\n') + 1
-        #     button = functions.q_push_button(btn_text, constants.variant_btn)
-        #     button.setFixedSize(200, 25 + 20 * lines)
-        #     button.clicked.connect(lambda checked, text=(problem['id'], problem['problem_text']): self.show_text(text))
-        #     buttons_layout.addWidget(button)
-        # for problem in self.problems["Транспортная задача"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-        # for problem in self.problems["Задача о назначениях"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
-        # for problem in self.problems["Многопродуктовая транспортная задача"].values():
-        #     self.button_texts[problem['name']] = (problem['id'], problem['problem_text'])
         
-        # for btn_text, display_text in self.button_texts.items():
-        #     btn_text = functions.split_by_newline_without_word_break(btn_text, 30)
-        #     lines = btn_text.count('\n') + 1
-        #     button = functions.q_push_button(btn_text, constants.variant_btn)
-        #     button.setFixedSize(200, 25 + 20 * lines)
-        #     button.clicked.connect(lambda checked, text=display_text: self.show_text(text))
-        #     buttons_layout.addWidget(button)
-        
-        # buttons_layout.addStretch()
-        
-        buttons_scroll = QScrollArea()
-        buttons_scroll.setWidget(self.buttons_stacked_widget)
-        buttons_scroll.setWidgetResizable(True)
-        buttons_scroll.setFrameShape(QFrame.NoFrame)
-        buttons_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        buttons_scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.buttons_scroll = QScrollArea()
+        self.buttons_scroll.setWidget(self.buttons_stacked_widget)
+        self.buttons_scroll.setWidgetResizable(True)
+        self.buttons_scroll.setFrameShape(QFrame.NoFrame)
+        self.buttons_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.buttons_scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         text_container = QWidget()
         text_container_layout = QVBoxLayout(text_container)
@@ -284,9 +288,10 @@ class UserInterface(QMainWindow):
         splitter.setFrameShadow(QFrame.Sunken)
         splitter.setStyleSheet("background-color: #ccc;")
         
-        problem_layout.addWidget(buttons_scroll, 1)
-        problem_layout.addWidget(splitter, 0)
-        problem_layout.addWidget(text_scroll, 4)
+        problem_layout.addWidget(self.buttons_scroll)
+        self.buttons_scroll.setFixedWidth(200)
+        problem_layout.addWidget(splitter)
+        problem_layout.addWidget(text_scroll, 1)
 
         self.level3_widget.hide()
     
@@ -303,6 +308,7 @@ class UserInterface(QMainWindow):
         self.confirm_btn.hide()
     
     def show_level3(self, category):
+        self.text_display.setText("Выберите задачу")
         self.buttons_stacked_widget.setCurrentWidget(self.btn_widgets[self.problem_type])
         self.level3_widget.show()
 
@@ -352,8 +358,6 @@ class UserInterface(QMainWindow):
                 problem = self.problems["Многопродуктовая транспортная задача"][self.problem_id]
                 self.multiobject_transportation_problem.source_spin.setValue(len(problem["supply"]))
                 self.multiobject_transportation_problem.dest_spin.setValue(len(problem["demand"]))
-                # self.multiobject_transportation_problem.source_spin.setValue(problem["data"]["size_y"])
-                # self.multiobject_transportation_problem.dest_spin.setValue(problem["data"]["size_x"])
                 self.multiobject_transportation_problem.costs = problem["costs"]
                 self.multiobject_transportation_problem.supply = problem["supply"]
                 self.multiobject_transportation_problem.demand = problem["demand"]               
@@ -457,7 +461,7 @@ class UserInterface(QMainWindow):
 
         copy_btn = functions.q_push_button(
             "Копировать",
-            constants.variant_btn, 
+            constants.solve_btn, 
             self.copy_solution_to_clipboard
         )
 
@@ -466,8 +470,6 @@ class UserInterface(QMainWindow):
             constants.solve_btn, 
             self.show_input_page
         )
-
-        copy_btn.setFixedSize(85, 55)
         
         btn_layout.addStretch()
         btn_layout.addWidget(copy_btn)

@@ -169,14 +169,13 @@ def split_by_newline_without_word_break(text, max_line_length):
     current_length = 0
 
     for word in words:
-        # Проверяем, не превысит ли добавление слова максимальную длину строки
         if current_line and current_length + len(word) + 1 > max_line_length:
             lines.append(' '.join(current_line))
             current_line = [word]
             current_length = len(word)
         else:
             if current_line:
-                current_length += len(word) + 1  # +1 для пробела
+                current_length += len(word) + 1
             else:
                 current_length = len(word)
             current_line.append(word)

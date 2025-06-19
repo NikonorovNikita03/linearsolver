@@ -71,6 +71,8 @@ class TransportationProblem():
         
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
+        self.menu_btn.setFixedWidth(50)
+        self.solve_btn.setFixedWidth(60)
 
         self.variable_field_x = input_field("Название столбцов", text = self.variable_name_x, max_length = 20)
         self.variable_field_x.setFixedWidth(132)
@@ -83,16 +85,15 @@ class TransportationProblem():
         self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
 
         self.control_layout.addWidget(self.menu_btn)
-        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addSpacing(10)
         self.control_layout.addWidget(self.variable_field_x)
         self.control_layout.addWidget(self.variable_btn_x)
         self.control_layout.addWidget(self.variable_field_y)
         self.control_layout.addWidget(self.variable_btn_y)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
+        
 
         self.group_top.setLayout(self.control_layout)
 
@@ -147,10 +148,6 @@ class TransportationProblem():
             for x in range(destinations + 2):
                 item = QTableWidgetItem(str(to_write[y][x]))
                 item.setTextAlignment(Qt.AlignCenter)
-
-                font = item.font()
-                font.setPointSize(20)
-                item.setFont(font)
 
                 self.table.setItem(y, x, item)
 
@@ -261,16 +258,10 @@ class TransportationProblem():
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
 
-                font = item.font()
-                font.setPointSize(20)
-                item.setFont(font)
-
                 self.solution_table.setItem(y, x, item)
         
         self.solution_table.setSpan(len(to_write), 0, 1, len(to_write[0]))
         item = QTableWidgetItem(f"Общая стоимость: {constants.stringify(self.total_cost)}")
         item.setTextAlignment(Qt.AlignCenter)
-        font = item.font()
-        font.setPointSize(20)
-        item.setFont(font)
+
         self.solution_table.setItem(len(to_write), 0, QTableWidgetItem(item))

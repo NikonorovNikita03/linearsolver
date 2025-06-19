@@ -37,7 +37,6 @@ class MultiobjectiveTransportationProblem():
 
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
-        #self.solution_table.setStyleSheet(constants.solution_table_ss)
         
         s_header = self.solution_table.horizontalHeader()
         s_header.setSectionResizeMode(QHeaderView.Stretch)
@@ -77,6 +76,8 @@ class MultiobjectiveTransportationProblem():
         
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
+        self.menu_btn.setFixedWidth(50)
+        self.solve_btn.setFixedWidth(60)
 
         self.variable_field_x = input_field("Название столбцов", text = self.variable_name_x, max_length = 20)
         self.variable_field_x.setFixedWidth(132)
@@ -86,30 +87,18 @@ class MultiobjectiveTransportationProblem():
         self.variable_field_z.setFixedWidth(132)
 
         self.variable_btn_x = q_push_button("Применить", constants.variant_btn)
-        # self.variable_btn_x.clicked.connect(self.variable_name_changed_x)
         self.variable_btn_y = q_push_button("Применить", constants.variant_btn)
-        # self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
         self.variable_btn_z = q_push_button("Применить", constants.variant_btn)
 
         self.control_layout.addWidget(self.menu_btn)
-        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addSpacing(10)
         self.control_layout.addWidget(self.variable_field_x)
         self.control_layout.addWidget(self.variable_btn_x)
         self.control_layout.addWidget(self.variable_field_y)
         self.control_layout.addWidget(self.variable_btn_y)
-        self.control_layout.addWidget(self.variable_field_z)
-        self.control_layout.addWidget(self.variable_btn_z)
-        self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
-
-        # self.control_layout.addLayout(self.source_layout)
-        # self.control_layout.addLayout(self.dest_layout)
-        # self.control_layout.addWidget(self.menu_btn)
-        # self.control_layout.addStretch()
-        # self.control_layout.addWidget(self.solve_btn)
+        self.control_layout.addStretch()
 
         self.group_top.setLayout(self.control_layout)
 
@@ -208,10 +197,6 @@ class MultiobjectiveTransportationProblem():
                     item.setBackground(brushes["black"])
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 item.setTextAlignment(Qt.AlignCenter)
-
-                font = item.font()
-                font.setPointSize(17)
-                item.setFont(font)
 
                 self.table.setItem(y, x, item)
 
@@ -332,10 +317,6 @@ class MultiobjectiveTransportationProblem():
                 if size_x - 2 > x > 1 and size_y - 2 > y > 1 and ((x % 2 == 0 and y % 2 == 1) or (x % 2 == 1 and y % 2 == 0)):
                     item.setBackground(brushes["black"])
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                    
-                font = item.font()
-                font.setPointSize(16)
-                item.setFont(font)
 
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)

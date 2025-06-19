@@ -66,6 +66,8 @@ class AssignmentProblem():
         
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
+        self.menu_btn.setFixedWidth(50)
+        self.solve_btn.setFixedWidth(60)
         
         self.variable_field_x = input_field("Название столбцов", text = self.variable_name_x, max_length = 20)
         self.variable_field_x.setFixedWidth(132)
@@ -78,16 +80,14 @@ class AssignmentProblem():
         self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
 
         self.control_layout.addWidget(self.menu_btn)
-        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addSpacing(10)
         self.control_layout.addWidget(self.variable_field_x)
         self.control_layout.addWidget(self.variable_btn_x)
         self.control_layout.addWidget(self.variable_field_y)
         self.control_layout.addWidget(self.variable_btn_y)
-        self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
+        self.control_layout.addStretch()
 
         self.group_top.setLayout(self.control_layout)
 
@@ -140,17 +140,13 @@ class AssignmentProblem():
                 item = QTableWidgetItem(str(to_write[y][x]))
                 item.setTextAlignment(Qt.AlignCenter)
 
-                font = item.font()
-                font.setPointSize(16)
-                item.setFont(font)
-
                 self.table.setItem(y, x, item)
 
     def get_data_from_input_table(self, refresh_names_x, refresh_names_y):
         rows = self.table.rowCount()
         cols = self.table.columnCount()
         
-        if rows < 3 or cols < 3:  # Минимум 1 поставщик, 1 потребитель + заголовки
+        if rows < 3 or cols < 3:
             raise ValueError("Таблица должна содержать хотя бы одного поставщика и потребителя")
         
         sources = rows - 2
@@ -235,10 +231,6 @@ class AssignmentProblem():
                     val = str(val)
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
-
-                font = item.font()
-                font.setPointSize(16)
-                item.setFont(font)
 
                 self.solution_table.setItem(y, x, item)
 

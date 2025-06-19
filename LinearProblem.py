@@ -30,7 +30,6 @@ class LinearProblem():
 
         self.solution_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.solution_table.setStyleSheet("QTableWidget { font-size: 12px; }")
-        #self.solution_table.setStyleSheet(constants.solution_table_ss)
         
         s_header = self.solution_table.horizontalHeader()
         s_header.setSectionResizeMode(QHeaderView.Stretch)
@@ -56,6 +55,7 @@ class LinearProblem():
         self.source_spin = QSpinBox()
         self.source_spin.setRange(1, 50)
         self.source_spin.setValue(self.size_y)
+        self.source_spin.setFixedWidth(75)
         self.source_spin.valueChanged.connect(self.update_input_table)
         self.source_layout.addWidget(self.source_spin)
         
@@ -65,6 +65,7 @@ class LinearProblem():
         self.dest_spin = QSpinBox()
         self.dest_spin.setRange(1, 50)
         self.dest_spin.setValue(self.size_x)
+        self.dest_spin.setFixedWidth(75)
         self.dest_spin.valueChanged.connect(self.update_input_table)
         self.dest_layout.addWidget(self.dest_spin)
 
@@ -76,23 +77,25 @@ class LinearProblem():
 
         self.menu_btn = q_push_button("Меню", constants.solve_btn)
         self.solve_btn = q_push_button("Решить", constants.solve_btn)
+        self.menu_btn.setFixedWidth(50)
+        self.solve_btn.setFixedWidth(60)
+
         self.variable_btn = q_push_button("Применить", constants.variant_btn)
         self.variable_btn_y = q_push_button("Применить", constants.variant_btn)
+        self.variable_btn.setFixedWidth(80)
+        self.variable_btn_y.setFixedWidth(80)
         self.variable_btn.clicked.connect(self.variable_name_changed)
         self.variable_btn_y.clicked.connect(self.variable_name_changed_y)
 
         self.control_layout.addWidget(self.menu_btn)
-        self.control_layout.addSpacing(10)
         self.control_layout.addLayout(self.source_layout)
         self.control_layout.addLayout(self.dest_layout)
-        self.control_layout.addSpacing(10)
         self.control_layout.addWidget(self.variable_field)
         self.control_layout.addWidget(self.variable_btn)
-        self.control_layout.addSpacing(10)
         self.control_layout.addWidget(self.variable_field_y)
         self.control_layout.addWidget(self.variable_btn_y)
-        self.control_layout.addStretch()
         self.control_layout.addWidget(self.solve_btn)
+        self.control_layout.addStretch()
 
         self.group_top.setLayout(self.control_layout)
     
@@ -162,7 +165,7 @@ class LinearProblem():
                 if x == 0 and y == 0:
                     problem_widget = QComboBox()
                     problem_widget.addItems(["Минимизация", "Максимизация"])
-                    problem_widget.setStyleSheet("QComboBox {font-size: 20px;}")
+                    problem_widget.setStyleSheet("QComboBox {font-size: 15px;}")
 
                     if self.problem_type != "min":
                         problem_widget.setCurrentText("Максимизация")
@@ -179,15 +182,11 @@ class LinearProblem():
                     self.table.setCellWidget(y, x, list_widget)
                 else:
                     item = QTableWidgetItem(str(to_write[y][x]))
-                    if (y == 1 and x == 0): #y == 0 or
+                    if (y == 1 and x == 0):
                         font = item.font()
                         font.setPointSize(16)
                         item.setFont(font)
                         item.setToolTip(str(to_write[y][x]))
-                    
-                    font = item.font()
-                    font.setPointSize(16)
-                    item.setFont(font)
 
                     item.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(y, x, item)
@@ -345,10 +344,6 @@ class LinearProblem():
                     font = item.font()
                     font.setPointSize(16)
                     item.setFont(font)
-
-                font = item.font()
-                font.setPointSize(16)
-                item.setFont(font)
 
                 item.setTextAlignment(Qt.AlignCenter)
                 self.solution_table.setItem(y, x, item)
